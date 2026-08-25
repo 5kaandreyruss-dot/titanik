@@ -32,8 +32,9 @@ export default async function ProfilePage() {
   const endingsDiscovered = new Set(finishedRuns.map((r) => r.endingId).filter(Boolean)).size;
 
   return (
-    <div className="min-h-screen p-4 flex flex-col items-center gap-4">
-      <Panel className="w-full max-w-md">
+    <div className="min-h-screen p-4 flex flex-col items-center gap-4 relative overflow-hidden">
+      <div className="ambient-glow" />
+      <Panel className="w-full max-w-md relative z-10 anim-fade-in-up">
         <h1 className="font-display text-xl font-semibold text-[var(--gold-bright)] mb-1">{user.nickname}</h1>
         <p className="text-sm text-[var(--ink-dim)] mb-4">
           {SubscriptionService.isPremium(user) ? ui.profile.premiumMember : ui.profile.freeAccount}
@@ -47,7 +48,7 @@ export default async function ProfilePage() {
           <Stat label={ui.profile.knowledgeEntries} value={discoveriesCount} />
         </dl>
       </Panel>
-      <Link href="/menu" className="btn w-full max-w-md">{ui.profile.backToMenu}</Link>
+      <Link href="/menu" className="btn w-full max-w-md relative z-10">{ui.profile.backToMenu}</Link>
     </div>
   );
 }

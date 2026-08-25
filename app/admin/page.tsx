@@ -14,9 +14,10 @@ export default async function AdminPage() {
   const ui = getUiDictionary(locale);
 
   return (
-    <div className="min-h-screen p-4 flex flex-col items-center gap-4">
-      <h1 className="font-display text-xl font-semibold text-[var(--gold-bright)]">{ui.admin.title}</h1>
-      <Panel className="w-full max-w-md">
+    <div className="min-h-screen p-4 flex flex-col items-center gap-4 relative overflow-hidden">
+      <div className="ambient-glow" />
+      <h1 className="font-display text-xl font-semibold text-[var(--gold-bright)] relative z-10 anim-fade-in-up">{ui.admin.title}</h1>
+      <Panel className="w-full max-w-md relative z-10 anim-fade-in-up">
         <h2 className="font-medium mb-3">{ui.admin.grantRevokeTitle}</h2>
         <AdminPremiumForm locale={locale} />
       </Panel>

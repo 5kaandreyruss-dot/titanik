@@ -15,8 +15,9 @@ export default async function PremiumPage() {
   const isPremium = SubscriptionService.isPremium(user);
 
   return (
-    <div className="min-h-screen p-4 flex flex-col items-center justify-center gap-4">
-      <Panel className="w-full max-w-md text-center">
+    <div className="min-h-screen p-4 flex flex-col items-center justify-center gap-4 relative overflow-hidden">
+      <div className="ambient-glow" />
+      <Panel className="w-full max-w-md text-center relative z-10 anim-fade-in-up">
         <h1 className="font-display text-xl font-semibold text-[var(--gold-bright)] mb-2">{ui.premium.title}</h1>
         {isPremium ? (
           <p className="text-[var(--positive)]">{ui.premium.alreadyPremium}</p>
@@ -27,7 +28,7 @@ export default async function PremiumPage() {
           </>
         )}
       </Panel>
-      <Link href="/menu" className="btn w-full max-w-md">{ui.premium.backToMenu}</Link>
+      <Link href="/menu" className="btn w-full max-w-md relative z-10">{ui.premium.backToMenu}</Link>
     </div>
   );
 }
