@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #060b13;
+  --bg-deep: #020509;
+  --panel: #0d1b29;
+  --panel-border: #1e3a52;
+  --ink: #e8edf2;
+  --ink-dim: #9fb0c0;
+  --gold: #d4af6a;
+  --gold-bright: #f0cf8e;
+  --danger: #c85a4a;
+  --positive: #6fae7f;
+  --neutral: #b0a26a;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-gold: var(--gold);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: radial-gradient(ellipse at top, #0c1a28 0%, var(--bg-deep) 70%);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 0 0 1px rgba(212, 175, 106, 0.05), 0 8px 24px rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+}
+
+.pixel-border {
+  border: 2px solid var(--gold);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.5);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.25rem;
+  min-height: 48px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: 3px;
+  border: 1px solid var(--panel-border);
+  background: #142a3d;
+  color: var(--ink);
+  transition: transform 0.08s ease, background 0.15s ease;
+  touch-action: manipulation;
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.btn-primary {
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  color: #14202b;
+  border-color: var(--gold);
+  font-weight: 700;
+}
+.btn-danger {
+  border-color: var(--danger);
+  color: #ffd7cf;
+}
+
+.scene-bg {
+  background: linear-gradient(180deg, #0a1826 0%, #050c14 100%);
+  image-rendering: pixelated;
+}
+
+::selection {
+  background: var(--gold);
+  color: #14202b;
+}
