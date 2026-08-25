@@ -34,7 +34,7 @@ export async function checkAndUnlockAchievements(
     await prisma.achievement.createMany({
       data: content.achievements
         .filter((a) => newlyUnlocked.includes(a.id))
-        .map((a) => ({ id: a.id, name: a.name, description: a.description, secret: a.secret })),
+        .map((a) => ({ id: a.id, name: a.name.en, description: a.description.en, secret: a.secret })),
       skipDuplicates: true,
     });
     await prisma.playerAchievement.createMany({

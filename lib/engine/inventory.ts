@@ -1,5 +1,6 @@
 import type { GameRunState, EngineEffect } from "@/lib/engine/types";
 import type { ContentRegistry } from "@/lib/content";
+import { engineMessages } from "@/lib/engine/messages";
 
 const SEARCH_TIME_MINUTES = 5;
 
@@ -11,7 +12,7 @@ export function takeItem(
 ): void {
   const loc = state.locations[state.currentLocationId];
   if (!loc.itemsPresent.includes(itemId)) {
-    effects.push({ kind: "error", text: "That item isn't here." });
+    effects.push({ kind: "error", text: engineMessages.itemNotHere() });
     return;
   }
   loc.itemsPresent = loc.itemsPresent.filter((i) => i !== itemId);
@@ -21,7 +22,7 @@ export function takeItem(
 
   state.time.minutesSinceStart += SEARCH_TIME_MINUTES;
   const def = content.itemsById[itemId];
-  effects.push({ kind: "item", text: `You take the ${def?.name ?? itemId}.` });
+  effects.push({ kind: "item", text: engineMessages.youTake(def.name) });
 }
 
 export function giveItem(
@@ -33,12 +34,12 @@ export function giveItem(
 ): void {
   const existing = state.inventory.find((i) => i.itemId === itemId);
   if (!existing || existing.quantity <= 0) {
-    effects.push({ kind: "error", text: "You don't have that item." });
+    effects.push({ kind: "error", text: engineMessages.dontHaveItem() });
     return;
   }
   const npc = state.npcs[npcId];
   if (!npc || npc.locationId !== state.currentLocationId) {
-    effects.push({ kind: "error", text: "They aren't here." });
+    effects.push({ kind: "error", text: engineMessages.theyArentHere() });
     return;
   }
   existing.quantity -= 1;
@@ -49,5 +50,5 @@ export function giveItem(
   if (rel) rel.trust = Math.min(100, rel.trust + 2);
   const itemDef = content.itemsById[itemId];
   const npcDef = content.npcsById[npcId];
-  effects.push({ kind: "item", text: `You give the ${itemDef?.name ?? itemId} to ${npcDef?.name ?? npcId}.` });
+  effects.push({ kind: "item", text: engineMessages.youGiveTo(itemDef.name, npcDef.name) });
 }

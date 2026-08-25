@@ -4,11 +4,16 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { SubscriptionService } from "@/lib/subscription";
 import { getContentRegistry } from "@/lib/content";
+import { getLocale } from "@/lib/i18n/locale";
+import { getUiDictionary } from "@/lib/i18n/ui";
 import { Panel } from "@/components/ui/Panel";
 
 export default async function ProfilePage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+
+  const locale = await getLocale();
+  const ui = getUiDictionary(locale);
 
   const [totalRuns, finishedRuns, achievementsCount, discoveriesCount, leaderboardEntries] = await Promise.all([
     prisma.gameRun.count({ where: { userId: user.id } }),
@@ -31,18 +36,18 @@ export default async function ProfilePage() {
       <Panel className="w-full max-w-md">
         <h1 className="text-xl font-semibold text-[var(--gold)] mb-1">{user.nickname}</h1>
         <p className="text-sm text-[var(--ink-dim)] mb-4">
-          {SubscriptionService.isPremium(user) ? "Premium member" : "Free account"}
+          {SubscriptionService.isPremium(user) ? ui.profile.premiumMember : ui.profile.freeAccount}
         </p>
         <dl className="grid grid-cols-2 gap-3 text-sm">
-          <Stat label="Total Runs" value={totalRuns} />
-          <Stat label="Survivals" value={survivals} />
-          <Stat label="People Rescued" value={peopleRescued} />
-          <Stat label="Endings Found" value={endingsDiscovered} />
-          <Stat label="Achievements" value={achievementsCount} />
-          <Stat label="Knowledge Entries" value={discoveriesCount} />
+          <Stat label={ui.profile.totalRuns} value={totalRuns} />
+          <Stat label={ui.profile.survivals} value={survivals} />
+          <Stat label={ui.profile.peopleRescued} value={peopleRescued} />
+          <Stat label={ui.profile.endingsFound} value={endingsDiscovered} />
+          <Stat label={ui.profile.achievementsLabel} value={achievementsCount} />
+          <Stat label={ui.profile.knowledgeEntries} value={discoveriesCount} />
         </dl>
       </Panel>
-      <Link href="/menu" className="btn w-full max-w-md">Back to Menu</Link>
+      <Link href="/menu" className="btn w-full max-w-md">{ui.profile.backToMenu}</Link>
     </div>
   );
 }

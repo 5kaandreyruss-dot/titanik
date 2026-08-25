@@ -5,16 +5,21 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/apiClient";
 import { Button } from "@/components/ui/Button";
+import { getUiDictionary } from "@/lib/i18n/ui";
+import type { Locale } from "@/lib/i18n/types";
 
 export function MenuActions({
   hasActiveRun,
   activeRunId,
   remainingFreeRuns,
+  locale,
 }: {
   hasActiveRun: boolean;
   activeRunId: string | null;
   remainingFreeRuns: number | null;
+  locale: Locale;
 }) {
+  const ui = getUiDictionary(locale);
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +31,7 @@ export function MenuActions({
       const res = await api.post<{ runId: string }>("/api/game/runs");
       router.push(`/play/${res.runId}`);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Could not start a new run.");
+      setError(e instanceof ApiError ? e.message : ui.errors.somethingWrong);
       setBusy(false);
     }
   }
@@ -43,24 +48,24 @@ export function MenuActions({
     <div className="flex flex-col gap-2">
       {hasActiveRun && activeRunId && (
         <Button variant="primary" onClick={() => router.push(`/play/${activeRunId}`)}>
-          Continue
+          {ui.menu.continueRun}
         </Button>
       )}
       <Button variant={hasActiveRun ? "default" : "primary"} onClick={startNewRun} disabled={busy || outOfRuns}>
-        New Run {remainingFreeRuns !== null && ` (${remainingFreeRuns} left today)`}
+        {ui.menu.newRun} {remainingFreeRuns !== null && ui.menu.runsLeftToday(remainingFreeRuns)}
       </Button>
       {error && <p className="text-[var(--danger)] text-sm">{error}</p>}
       {outOfRuns && (
         <p className="text-xs text-[var(--ink-dim)]">
-          Out of free runs for today. <Link href="/premium" className="text-[var(--gold)] underline">Go Premium</Link> for unlimited runs.
+          {ui.menu.outOfRunsToday} <Link href="/premium" className="text-[var(--gold)] underline">{ui.menu.goPremium}</Link>
         </p>
       )}
-      <Link href="/profile" className="btn">Profile</Link>
-      <Link href="/achievements" className="btn">Achievements</Link>
-      <Link href="/leaderboard" className="btn">Leaderboard</Link>
-      <Link href="/archive" className="btn">Knowledge Archive</Link>
-      <Link href="/premium" className="btn">Premium</Link>
-      <Button variant="danger" onClick={logout}>Logout</Button>
+      <Link href="/profile" className="btn">{ui.menu.profile}</Link>
+      <Link href="/achievements" className="btn">{ui.menu.achievements}</Link>
+      <Link href="/leaderboard" className="btn">{ui.menu.leaderboard}</Link>
+      <Link href="/archive" className="btn">{ui.menu.knowledgeArchive}</Link>
+      <Link href="/premium" className="btn">{ui.menu.premium}</Link>
+      <Button variant="danger" onClick={logout}>{ui.menu.logout}</Button>
     </div>
   );
 }

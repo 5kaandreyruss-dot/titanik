@@ -10,8 +10,8 @@ async function main() {
   await prisma.achievement.createMany({
     data: content.achievements.map((a) => ({
       id: a.id,
-      name: a.name,
-      description: a.description,
+      name: a.name.en,
+      description: a.description.en,
       secret: a.secret,
     })),
     skipDuplicates: true,
@@ -22,15 +22,15 @@ async function main() {
     skipDuplicates: true,
   });
   await prisma.locationDefinitionRow.createMany({
-    data: content.locations.map((l) => ({ id: l.id, name: l.name })),
+    data: content.locations.map((l) => ({ id: l.id, name: l.name.en })),
     skipDuplicates: true,
   });
   await prisma.itemDefinitionRow.createMany({
-    data: content.items.map((i) => ({ id: i.id, name: i.name })),
+    data: content.items.map((i) => ({ id: i.id, name: i.name.en })),
     skipDuplicates: true,
   });
   await prisma.endingDefinitionRow.createMany({
-    data: content.endings.map((e) => ({ id: e.id, name: e.name })),
+    data: content.endings.map((e) => ({ id: e.id, name: e.name.en })),
     skipDuplicates: true,
   });
   await prisma.eventDefinitionRow.createMany({

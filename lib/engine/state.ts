@@ -3,6 +3,7 @@ import { ALL_STATS } from "@/lib/engine/types";
 import type { ContentRegistry } from "@/lib/content";
 import { SeededRng } from "@/lib/engine/rng";
 import { maleFirstNames, femaleFirstNames, surnames } from "@/lib/content/names";
+import type { Locale } from "@/lib/i18n/types";
 
 const GAME_START_HOUR = 20; // 20:00, April 14, 1912
 
@@ -97,7 +98,10 @@ export function createInitialState(
     log: [
       {
         time: 0,
-        text: `It is 8:00 PM, April 14, 1912. You are ${characterName}, ${withArticle(archetype.name.toLowerCase())} aboard the RMS Titanic.`,
+        text: {
+          en: `It is 8:00 PM, April 14, 1912. You are ${characterName}, ${withArticle(archetype.name.en.toLowerCase())} aboard the RMS Titanic.`,
+          ru: `Сейчас 8 часов вечера, 14 апреля 1912 года. Вы — ${characterName}, ${archetype.name.ru.toLowerCase()} на борту «Титаника».`,
+        },
       },
     ],
     ending: null,
@@ -111,13 +115,17 @@ export function createInitialState(
   };
 }
 
-export function formatGameTime(minutesSinceStart: number): { time: string; date: string } {
+export function formatGameTime(minutesSinceStart: number, locale: Locale = "en"): { time: string; date: string } {
   const totalMinutes = GAME_START_HOUR * 60 + minutesSinceStart;
   const dayOffset = Math.floor(totalMinutes / (24 * 60));
   const minutesInDay = totalMinutes % (24 * 60);
   const hours = Math.floor(minutesInDay / 60);
   const minutes = minutesInDay % 60;
   const time = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-  const date = dayOffset === 0 ? "April 14, 1912" : "April 15, 1912";
+  const dates: Record<Locale, [string, string]> = {
+    en: ["April 14, 1912", "April 15, 1912"],
+    ru: ["14 апреля 1912 года", "15 апреля 1912 года"],
+  };
+  const date = dayOffset === 0 ? dates[locale][0] : dates[locale][1];
   return { time, date };
 }

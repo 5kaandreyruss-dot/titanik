@@ -1,6 +1,8 @@
 // Core types shared by the game engine and content definitions.
 // This module has zero framework dependencies (no React/Next/Prisma).
 
+import type { LocalizedText } from "@/lib/i18n/types";
+
 export type StatKey =
   | "strength"
   | "agility"
@@ -115,7 +117,7 @@ export interface LocationRuntimeState {
 
 export interface LogEntry {
   time: number;
-  text: string;
+  text: LocalizedText;
 }
 
 export interface GameRunState {
@@ -160,7 +162,7 @@ export type PlayerAction =
 
 export interface EngineEffect {
   kind: "log" | "relationship" | "item" | "knowledge" | "location" | "ending" | "error";
-  text: string;
+  text: LocalizedText;
 }
 
 export interface EngineResult {

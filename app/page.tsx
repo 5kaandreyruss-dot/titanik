@@ -1,27 +1,31 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getLocale } from "@/lib/i18n/locale";
+import { getUiDictionary } from "@/lib/i18n/ui";
+import { LocaleSwitcher } from "@/components/i18n/LocaleSwitcher";
 
 export default async function Home() {
   const user = await getCurrentUser();
   if (user) redirect("/menu");
 
+  const locale = await getLocale();
+  const ui = getUiDictionary(locale);
+
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-6 gap-8 text-center">
+    <div className="flex-1 flex flex-col items-center justify-center p-6 gap-8 text-center relative">
+      <LocaleSwitcher locale={locale} className="absolute top-4 right-4" />
       <div>
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-widest text-[var(--gold)]">TITANIC</h1>
-        <p className="text-sm sm:text-base tracking-[0.4em] text-[var(--ink-dim)] mt-2">THE LAST CHANCE</p>
+        <h1 className="text-4xl sm:text-5xl font-bold tracking-widest text-[var(--gold)]">{ui.landing.title}</h1>
+        <p className="text-sm sm:text-base tracking-[0.4em] text-[var(--ink-dim)] mt-2">{ui.landing.subtitle}</p>
       </div>
-      <p className="max-w-sm text-[var(--ink-dim)] leading-relaxed">
-        April 14, 1912. Explore. Talk. Investigate. Remember. Make decisions — and live with
-        the consequences.
-      </p>
+      <p className="max-w-sm text-[var(--ink-dim)] leading-relaxed">{ui.landing.tagline}</p>
       <div className="flex flex-col gap-3 w-full max-w-xs">
         <Link href="/register" className="btn btn-primary">
-          New Account
+          {ui.landing.newAccount}
         </Link>
         <Link href="/login" className="btn">
-          Sign In
+          {ui.landing.signIn}
         </Link>
       </div>
     </div>

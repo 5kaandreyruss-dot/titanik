@@ -3,6 +3,8 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { SubscriptionService } from "@/lib/subscription";
+import { getLocale } from "@/lib/i18n/locale";
+import { getUiDictionary } from "@/lib/i18n/ui";
 
 const bodySchema = z.object({
   nickname: z.string().min(1),
@@ -11,17 +13,20 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const locale = await getLocale();
+  const ui = getUiDictionary(locale);
+
   const admin = await requireUser().catch(() => null);
   if (!admin || admin.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ error: ui.errors.forbidden }, { status: 403 });
   }
 
   const body = await request.json().catch(() => null);
   const parsed = bodySchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: ui.errors.invalidInput }, { status: 400 });
 
   const target = await prisma.user.findUnique({ where: { nickname: parsed.data.nickname } });
-  if (!target) return NextResponse.json({ error: "User not found" }, { status: 404 });
+  if (!target) return NextResponse.json({ error: ui.errors.userNotFound }, { status: 404 });
 
   if (parsed.data.action === "activate") {
     const until = parsed.data.untilDays

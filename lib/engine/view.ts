@@ -2,6 +2,8 @@ import type { GameRunState } from "@/lib/engine/types";
 import type { ContentRegistry } from "@/lib/content";
 import { formatGameTime } from "@/lib/engine/state";
 import { getVisibleNode } from "@/lib/engine/dialogue";
+import { t, type Locale } from "@/lib/i18n/types";
+import { getUiDictionary } from "@/lib/i18n/ui";
 
 function bucket(value: number): "none" | "light" | "moderate" | "severe" | "critical" {
   if (value <= 0) return "none";
@@ -11,14 +13,17 @@ function bucket(value: number): "none" | "light" | "moderate" | "severe" | "crit
   return "critical";
 }
 
+export type RunView = ReturnType<typeof buildRunView>;
+
 /**
  * Builds the client-facing view of a run: never leaks undiscovered content,
  * exact skill-check math, or raw ship-state numbers (spec #7, #47, #58).
+ * All player-facing text is resolved to `locale` here — the engine itself
+ * stays language-neutral.
  */
-export type RunView = ReturnType<typeof buildRunView>;
-
-export function buildRunView(content: ContentRegistry, state: GameRunState) {
-  const { time, date } = formatGameTime(state.time.minutesSinceStart);
+export function buildRunView(content: ContentRegistry, state: GameRunState, locale: Locale) {
+  const ui = getUiDictionary(locale);
+  const { time, date } = formatGameTime(state.time.minutesSinceStart, locale);
   const currentLocDef = content.locationsById[state.currentLocationId];
 
   const exits = (currentLocDef?.exits ?? []).map((id) => {
@@ -26,7 +31,7 @@ export function buildRunView(content: ContentRegistry, state: GameRunState) {
     const runtime = state.locations[id];
     return {
       id,
-      name: runtime.discovered ? def.name : "Unexplored passage",
+      name: runtime.discovered ? t(def.name, locale) : ui.game.unexploredPassage,
       discovered: runtime.discovered,
       locked: runtime.locked,
     };
@@ -34,29 +39,35 @@ export function buildRunView(content: ContentRegistry, state: GameRunState) {
 
   const npcsHere = content.npcs
     .filter((n) => state.npcs[n.id]?.locationId === state.currentLocationId && state.npcs[n.id]?.alive)
-    .map((n) => ({ id: n.id, name: n.name, profession: n.profession }));
+    .map((n) => ({ id: n.id, name: n.name, profession: t(n.profession, locale) }));
 
   const itemsHere = (state.locations[state.currentLocationId]?.itemsPresent ?? []).map((id) => ({
     id,
-    name: content.itemsById[id]?.name ?? id,
+    name: t(content.itemsById[id].name, locale),
   }));
 
-  const inventory = state.inventory.map((i) => ({
-    itemId: i.itemId,
-    quantity: i.quantity,
-    name: content.itemsById[i.itemId]?.name ?? i.itemId,
-    description: content.itemsById[i.itemId]?.description ?? "",
-    actions: content.itemsById[i.itemId]?.actions ?? [],
-  }));
+  const inventory = state.inventory.map((i) => {
+    const def = content.itemsById[i.itemId];
+    return {
+      itemId: i.itemId,
+      quantity: i.quantity,
+      name: t(def.name, locale),
+      description: t(def.description, locale),
+      actions: def.actions,
+    };
+  });
 
-  const knowledge = state.knowledge.map((id) => content.knowledgeById[id]).filter(Boolean);
+  const knowledge = state.knowledge
+    .map((id) => content.knowledgeById[id])
+    .filter(Boolean)
+    .map((k) => ({ id: k.id, category: k.category, title: t(k.title, locale), text: t(k.text, locale) }));
 
   const map = content.locations.map((loc) => {
     const runtime = state.locations[loc.id];
     return {
       id: loc.id,
-      name: runtime.discovered ? loc.name : "???",
-      deck: loc.deck,
+      name: runtime.discovered ? t(loc.name, locale) : ui.game.unknownLocation,
+      deck: t(loc.deck, locale),
       discovered: runtime.discovered,
       locked: runtime.locked,
       isCurrent: loc.id === state.currentLocationId,
@@ -75,8 +86,12 @@ export function buildRunView(content: ContentRegistry, state: GameRunState) {
       dialogue = {
         npcId: state.activeDialogue.npcId,
         npcName: content.npcsById[state.activeDialogue.npcId]?.name ?? state.activeDialogue.npcId,
-        text: visible.node.npcText,
-        choices: visible.choices.map((c) => ({ id: c.id, text: c.text, hint: c.hint })),
+        text: t(visible.node.npcText, locale),
+        choices: visible.choices.map((c) => ({
+          id: c.id,
+          text: t(c.text, locale),
+          hint: c.hint ? t(c.hint, locale) : undefined,
+        })),
       };
     }
   }
@@ -92,10 +107,10 @@ export function buildRunView(content: ContentRegistry, state: GameRunState) {
     location: currentLocDef
       ? {
           id: currentLocDef.id,
-          name: currentLocDef.name,
-          description: currentLocDef.description,
+          name: t(currentLocDef.name, locale),
+          description: t(currentLocDef.description, locale),
           sceneBackground: currentLocDef.sceneBackground,
-          deck: currentLocDef.deck,
+          deck: t(currentLocDef.deck, locale),
         }
       : null,
     exits,
@@ -119,8 +134,15 @@ export function buildRunView(content: ContentRegistry, state: GameRunState) {
     socialClass: state.socialClass,
     rescuedPeople: state.rescuedPeople,
     deadPeople: state.deadPeople,
-    log: state.log.slice(-20),
-    ending: state.ending ? content.endingsById[state.ending] ?? null : null,
+    log: state.log.slice(-20).map((entry) => ({ time: entry.time, text: t(entry.text, locale) })),
+    ending: state.ending
+      ? {
+          id: state.ending,
+          name: t(content.endingsById[state.ending].name, locale),
+          category: content.endingsById[state.ending].category,
+          epilogueText: t(content.endingsById[state.ending].epilogueText, locale),
+        }
+      : null,
   };
 }
 

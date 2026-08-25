@@ -7,6 +7,8 @@ import { applyAction } from "@/lib/engine/run";
 import { buildRunView } from "@/lib/engine/view";
 import { checkAndUnlockAchievements } from "@/lib/achievements";
 import { recordLeaderboardEntry } from "@/lib/leaderboard";
+import { getLocale } from "@/lib/i18n/locale";
+import { getUiDictionary } from "@/lib/i18n/ui";
 import type { GameRunState, PlayerAction } from "@/lib/engine/types";
 
 const actionSchema: z.ZodType<PlayerAction> = z.discriminatedUnion("type", [
@@ -22,20 +24,22 @@ const actionSchema: z.ZodType<PlayerAction> = z.discriminatedUnion("type", [
 ]);
 
 export async function POST(request: Request, { params }: { params: Promise<{ runId: string }> }) {
+  const locale = await getLocale();
+  const ui = getUiDictionary(locale);
   const user = await requireUser().catch(() => null);
-  if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: ui.errors.notAuthenticated }, { status: 401 });
 
   const { runId } = await params;
   const body = await request.json().catch(() => null);
   const parsed = actionSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: ui.errors.invalidAction }, { status: 400 });
 
   const gameRun = await prisma.gameRun.findUnique({ where: { id: runId } });
   if (!gameRun || gameRun.userId !== user.id) {
-    return NextResponse.json({ error: "Run not found" }, { status: 404 });
+    return NextResponse.json({ error: ui.errors.runNotFound }, { status: 404 });
   }
   if (gameRun.status !== "ACTIVE") {
-    return NextResponse.json({ error: "This run has already ended" }, { status: 409 });
+    return NextResponse.json({ error: ui.errors.runAlreadyEnded }, { status: 409 });
   }
 
   const content = getContentRegistry();
@@ -74,6 +78,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ run
     await recordLeaderboardEntry(user, updated, newState);
   }
 
-  const view = buildRunView(content, newState);
-  return NextResponse.json({ view, effects, newAchievements, finished });
+  const view = buildRunView(content, newState, locale);
+  const localizedEffects = effects.map((e) => ({ kind: e.kind, text: e.text[locale] }));
+  return NextResponse.json({ view, effects: localizedEffects, newAchievements, finished });
 }
