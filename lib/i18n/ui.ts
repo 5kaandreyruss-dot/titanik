@@ -60,6 +60,27 @@ export interface UiDictionary {
     historyTitle: string;
     historyEmpty: string;
   };
+  stats: {
+    strength: string;
+    agility: string;
+    intelligence: string;
+    observation: string;
+    charisma: string;
+    stealth: string;
+    endurance: string;
+    luck: string;
+    authority: string;
+  };
+  socialClass: {
+    first: string;
+    second: string;
+    third: string;
+    crew: string;
+  };
+  characterIntro: {
+    title: string;
+    beginButton: string;
+  };
   ship: {
     none: string;
     light: string;
@@ -234,6 +255,27 @@ const en: UiDictionary = {
     shipCalm: "The ship feels calm tonight.",
     historyTitle: "History",
     historyEmpty: "Nothing has happened yet.",
+  },
+  stats: {
+    strength: "Strength",
+    agility: "Agility",
+    intelligence: "Intelligence",
+    observation: "Observation",
+    charisma: "Charisma",
+    stealth: "Stealth",
+    endurance: "Endurance",
+    luck: "Luck",
+    authority: "Authority",
+  },
+  socialClass: {
+    first: "First Class",
+    second: "Second Class",
+    third: "Third Class",
+    crew: "Crew",
+  },
+  characterIntro: {
+    title: "You are...",
+    beginButton: "Begin",
   },
   ship: {
     none: "Calm",
@@ -410,6 +452,27 @@ const ru: UiDictionary = {
     shipCalm: "Этой ночью на корабле спокойно.",
     historyTitle: "История",
     historyEmpty: "Пока ничего не произошло.",
+  },
+  stats: {
+    strength: "Сила",
+    agility: "Ловкость",
+    intelligence: "Интеллект",
+    observation: "Наблюдательность",
+    charisma: "Харизма",
+    stealth: "Скрытность",
+    endurance: "Выносливость",
+    luck: "Удача",
+    authority: "Авторитет",
+  },
+  socialClass: {
+    first: "Первый класс",
+    second: "Второй класс",
+    third: "Третий класс",
+    crew: "Экипаж",
+  },
+  characterIntro: {
+    title: "Вы —",
+    beginButton: "Начать",
   },
   ship: {
     none: "Спокойно",

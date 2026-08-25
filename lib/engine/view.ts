@@ -131,6 +131,10 @@ export function buildRunView(content: ContentRegistry, state: GameRunState, loca
     stats: state.stats,
     characterName: state.characterName,
     characterArchetypeId: state.characterArchetypeId,
+    archetype: (() => {
+      const def = content.archetypesById[state.characterArchetypeId];
+      return def ? { id: def.id, name: t(def.name, locale), description: t(def.description, locale) } : null;
+    })(),
     socialClass: state.socialClass,
     rescuedPeople: state.rescuedPeople,
     deadPeople: state.deadPeople,

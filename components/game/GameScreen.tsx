@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/apiClient";
 import type { RunView } from "@/lib/engine/view";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { IsometricShipMap } from "@/components/game/IsometricShipMap";
 import { SceneArt } from "@/components/game/scenes/SceneArt";
+import { NpcPortrait } from "@/components/game/NpcPortrait";
 import { getUiDictionary } from "@/lib/i18n/ui";
 import type { Locale } from "@/lib/i18n/types";
 
@@ -24,7 +25,17 @@ interface LogLine {
   text: string;
 }
 
-export function GameScreen({ runId, initialView, locale }: { runId: string; initialView: RunView; locale: Locale }) {
+export function GameScreen({
+  runId,
+  initialView,
+  locale,
+  isNewRun = false,
+}: {
+  runId: string;
+  initialView: RunView;
+  locale: Locale;
+  isNewRun?: boolean;
+}) {
   const ui = getUiDictionary(locale);
   const router = useRouter();
   const [view, setView] = useState(initialView);
@@ -33,6 +44,28 @@ export function GameScreen({ runId, initialView, locale }: { runId: string; init
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newAchievements, setNewAchievements] = useState<string[]>([]);
+  const introSeenKey = `titanik_intro_seen_${runId}`;
+  const [showIntro, setShowIntro] = useState(isNewRun);
+
+  useEffect(() => {
+    if (!isNewRun) return;
+    try {
+      // sessionStorage is unavailable during SSR, so this can only be checked post-hydration
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (window.sessionStorage.getItem(introSeenKey) === "1") setShowIntro(false);
+    } catch {
+      // sessionStorage unavailable (e.g. private mode) — intro stays visible, which is harmless
+    }
+  }, [isNewRun, introSeenKey]);
+
+  function dismissIntro() {
+    try {
+      window.sessionStorage.setItem(introSeenKey, "1");
+    } catch {
+      // sessionStorage unavailable (e.g. private mode) — intro may reappear on reload, which is harmless
+    }
+    setShowIntro(false);
+  }
 
   async function send(action: PlayerAction) {
     if (busy || view.ending) return;
@@ -57,6 +90,10 @@ export function GameScreen({ runId, initialView, locale }: { runId: string; init
 
   if (view.ending) {
     return <EndingScreen view={view} ui={ui} onMenu={() => router.push("/menu")} />;
+  }
+
+  if (showIntro) {
+    return <CharacterIntro view={view} ui={ui} onBegin={dismissIntro} />;
   }
 
   return (
@@ -112,6 +149,7 @@ export function GameScreen({ runId, initialView, locale }: { runId: string; init
                 <div className="flex flex-wrap gap-2">
                   {view.npcsHere.map((npc) => (
                     <Button key={npc.id} onClick={() => send({ type: "TALK_START", npcId: npc.id })} disabled={busy}>
+                      <NpcPortrait npcId={npc.id} size={22} />
                       {ui.game.talkTo(npc.name)}
                     </Button>
                   ))}
@@ -254,7 +292,10 @@ function DialoguePanel({
 }) {
   return (
     <div className="anim-pop-in">
-      <p className="text-[var(--gold-bright)] text-xs uppercase tracking-wide mb-1.5">{dialogue.npcName}</p>
+      <div className="flex items-center gap-2 mb-2">
+        <NpcPortrait npcId={dialogue.npcId} size={32} />
+        <p className="text-[var(--gold-bright)] text-xs uppercase tracking-wide">{dialogue.npcName}</p>
+      </div>
       <p className="mb-3 italic leading-relaxed text-[15px]">{dialogue.text}</p>
       <div className="flex flex-col gap-2">
         {dialogue.choices.map((choice) => (
@@ -263,6 +304,57 @@ function DialoguePanel({
             {choice.hint && <span className="block text-xs text-[var(--ink-dim)] font-normal">{choice.hint}</span>}
           </Button>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function CharacterIntro({
+  view,
+  ui,
+  onBegin,
+}: {
+  view: RunView;
+  ui: ReturnType<typeof getUiDictionary>;
+  onBegin: () => void;
+}) {
+  const statEntries = Object.entries(view.stats) as [keyof typeof ui.stats, number][];
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="ambient-glow" />
+      <div className="panel max-w-md w-full p-6 space-y-4 relative z-10 anim-pop-in">
+        <div className="text-center">
+          <p className="text-xs uppercase tracking-widest text-[var(--ink-dim)]">{ui.characterIntro.title}</p>
+          <h1 className="font-display text-2xl font-bold text-[var(--gold-bright)] mt-1">{view.characterName}</h1>
+          <p className="text-sm text-[var(--ink-dim)] mt-1">
+            {view.archetype?.name} · {ui.socialClass[view.socialClass as keyof typeof ui.socialClass]}
+          </p>
+        </div>
+
+        {view.archetype?.description && (
+          <p className="text-sm text-[var(--ink-dim)] text-center leading-relaxed">{view.archetype.description}</p>
+        )}
+
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 pt-2">
+          {statEntries.map(([key, value]) => (
+            <div key={key}>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-[var(--ink-dim)]">{ui.stats[key]}</span>
+                <span className="text-[var(--gold-bright)] font-medium">{value}</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-black/30 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[var(--gold)] to-[var(--gold-bright)]"
+                  style={{ width: `${Math.min(100, (value / 10) * 100)}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <Button variant="primary" onClick={onBegin} className="w-full">
+          {ui.characterIntro.beginButton}
+        </Button>
       </div>
     </div>
   );
