@@ -21,7 +21,7 @@ export default async function AchievementsPage() {
 
   return (
     <div className="min-h-screen p-4 flex flex-col items-center gap-4">
-      <h1 className="text-xl font-semibold text-[var(--gold)]">{ui.achievementsPage.title}</h1>
+      <h1 className="font-display text-xl font-semibold text-[var(--gold-bright)]">{ui.achievementsPage.title}</h1>
       <div className="w-full max-w-md flex flex-col gap-2">
         {content.achievements.map((a) => {
           const isUnlocked = unlockedIds.has(a.id);

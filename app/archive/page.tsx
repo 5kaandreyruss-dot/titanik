@@ -29,7 +29,7 @@ export default async function ArchivePage() {
 
   return (
     <div className="min-h-screen p-4 flex flex-col items-center gap-4">
-      <h1 className="text-xl font-semibold text-[var(--gold)]">{ui.archive.title}</h1>
+      <h1 className="font-display text-xl font-semibold text-[var(--gold-bright)]">{ui.archive.title}</h1>
       <div className="w-full max-w-md flex flex-col gap-4">
         {categories.length === 0 && (
           <p className="text-sm text-[var(--ink-dim)] text-center">{ui.archive.empty}</p>

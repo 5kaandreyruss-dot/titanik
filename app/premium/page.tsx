@@ -17,7 +17,7 @@ export default async function PremiumPage() {
   return (
     <div className="min-h-screen p-4 flex flex-col items-center justify-center gap-4">
       <Panel className="w-full max-w-md text-center">
-        <h1 className="text-xl font-semibold text-[var(--gold)] mb-2">{ui.premium.title}</h1>
+        <h1 className="font-display text-xl font-semibold text-[var(--gold-bright)] mb-2">{ui.premium.title}</h1>
         {isPremium ? (
           <p className="text-[var(--positive)]">{ui.premium.alreadyPremium}</p>
         ) : (
