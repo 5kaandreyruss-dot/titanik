@@ -19,5 +19,5 @@ export default async function PlayPage({ params }: { params: Promise<{ runId: st
   const content = getContentRegistry();
   const view = buildRunView(content, gameRun.stateJson as unknown as GameRunState, locale);
 
-  return <GameScreen runId={runId} initialView={view} locale={locale} />;
+  return <GameScreen runId={runId} initialView={view} locale={locale} isNewRun={gameRun.actionCount === 0} />;
 }

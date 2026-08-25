@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -21,6 +21,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Titanic: The Last Chance",
   description: "An atmospheric, alternate-history survival game aboard the RMS Titanic.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a1420",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
