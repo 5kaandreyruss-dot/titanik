@@ -28,14 +28,15 @@ export default async function ArchivePage() {
   const categories = Object.keys(byCategory) as (keyof typeof ui.archive.categories)[];
 
   return (
-    <div className="min-h-screen p-4 flex flex-col items-center gap-4">
-      <h1 className="font-display text-xl font-semibold text-[var(--gold-bright)]">{ui.archive.title}</h1>
-      <div className="w-full max-w-md flex flex-col gap-4">
+    <div className="min-h-screen p-4 flex flex-col items-center gap-4 relative overflow-hidden">
+      <div className="ambient-glow" />
+      <h1 className="font-display text-xl font-semibold text-[var(--gold-bright)] relative z-10 anim-fade-in-up">{ui.archive.title}</h1>
+      <div className="w-full max-w-md flex flex-col gap-4 relative z-10">
         {categories.length === 0 && (
-          <p className="text-sm text-[var(--ink-dim)] text-center">{ui.archive.empty}</p>
+          <p className="text-sm text-[var(--ink-dim)] text-center anim-fade-in-up">{ui.archive.empty}</p>
         )}
         {categories.map((cat) => (
-          <div key={cat}>
+          <div key={cat} className="anim-fade-in-up">
             <h2 className="text-sm uppercase tracking-wide text-[var(--ink-dim)] mb-2">{ui.archive.categories[cat]}</h2>
             <div className="flex flex-col gap-2">
               {byCategory[cat].map((entry) => (
@@ -48,7 +49,7 @@ export default async function ArchivePage() {
           </div>
         ))}
       </div>
-      <Link href="/menu" className="btn w-full max-w-md">{ui.archive.backToMenu}</Link>
+      <Link href="/menu" className="btn w-full max-w-md relative z-10">{ui.archive.backToMenu}</Link>
     </div>
   );
 }
