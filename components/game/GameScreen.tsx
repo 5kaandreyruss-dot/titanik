@@ -8,6 +8,7 @@ import type { PlayerAction } from "@/lib/engine/types";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { IsometricShipMap } from "@/components/game/IsometricShipMap";
+import { SceneArt } from "@/components/game/scenes/SceneArt";
 import { getUiDictionary } from "@/lib/i18n/ui";
 import type { Locale } from "@/lib/i18n/types";
 
@@ -28,7 +29,7 @@ export function GameScreen({ runId, initialView, locale }: { runId: string; init
   const router = useRouter();
   const [view, setView] = useState(initialView);
   const [log, setLog] = useState<LogLine[]>(() => initialView.log.map((l, i) => ({ id: i, text: l.text })));
-  const [modal, setModal] = useState<"inventory" | "map" | "move" | null>(null);
+  const [modal, setModal] = useState<"inventory" | "map" | "move" | "history" | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newAchievements, setNewAchievements] = useState<string[]>([]);
@@ -43,10 +44,10 @@ export function GameScreen({ runId, initialView, locale }: { runId: string; init
       setLog((prev) => {
         const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 0;
         const appended = res.effects.map((e, i) => ({ id: nextId + i, text: e.text }));
-        return [...prev, ...appended].slice(-40);
+        return [...prev, ...appended].slice(-60);
       });
       if (res.newAchievements.length > 0) setNewAchievements(res.newAchievements);
-      setModal(null);
+      if (modal !== "history") setModal(null);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : ui.errors.somethingWrong);
     } finally {
@@ -59,76 +60,81 @@ export function GameScreen({ runId, initialView, locale }: { runId: string; init
   }
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden">
+    <div className="h-dvh flex flex-col overflow-hidden bg-[var(--bg-deep)]">
       {busy && <div className="loading-shimmer fixed top-0 left-0 right-0 h-0.5 z-50" />}
 
-      <header className="panel mx-3 mt-3 px-4 py-2.5 flex items-center justify-between text-sm shrink-0">
-        <div>
-          <div className="text-[var(--gold-bright)] font-mono text-lg leading-none tracking-wide">{view.time}</div>
-          <div className="text-[var(--ink-dim)] text-xs mt-0.5">{view.date}</div>
+      <div className="relative shrink-0" style={{ height: "36vh", minHeight: 200, maxHeight: 320 }}>
+        <div key={view.location?.sceneBackground} className="absolute inset-0 anim-fade-in-up">
+          <SceneArt sceneKey={view.location?.sceneBackground ?? ""} />
         </div>
-        <div key={view.location?.id} className="text-right anim-fade-in-up">
-          <div className="font-display font-semibold text-[var(--ink)]">{view.location?.name}</div>
-          <div className="text-[var(--ink-dim)] text-xs mt-0.5">{view.location?.deck}</div>
-        </div>
-      </header>
+        <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-deep)] via-black/10 to-black/40" />
 
-      <div className="mx-3 mt-2 panel scene-bg h-48 shrink-0 relative overflow-hidden">
-        <IsometricShipMap view={view} />
-        <div className="absolute bottom-2 left-3 right-3 text-xs text-[var(--ink-dim)]">
-          <ShipStatus view={view} ui={ui} />
+        <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
+          <div className="bg-black/45 backdrop-blur-sm rounded-lg px-3 py-1.5">
+            <div className="text-[var(--gold-bright)] font-mono text-base leading-none">{view.time}</div>
+            <div className="text-white/70 text-[10px] mt-0.5">{view.date}</div>
+          </div>
+          <button
+            onClick={() => setModal("history")}
+            className="bg-black/45 backdrop-blur-sm rounded-lg w-9 h-9 flex items-center justify-center text-white/80 text-lg"
+            aria-label={ui.game.historyTitle}
+          >
+            ⟲
+          </button>
+        </div>
+
+        <div key={`loc-${view.location?.id}`} className="absolute bottom-3 left-3 right-3 anim-fade-in-up">
+          <div className="font-display text-white font-semibold text-lg drop-shadow-md">{view.location?.name}</div>
+          <div className="text-white/60 text-xs">{view.location?.deck}</div>
+          <div className="text-white/50 text-[11px] mt-1">
+            <ShipStatus view={view} ui={ui} />
+          </div>
         </div>
       </div>
 
       <main className="flex-1 overflow-y-auto mx-3 mt-2 mb-2 panel p-4 space-y-3">
-        <p key={`desc-${view.location?.id}`} className="leading-relaxed text-[15px] anim-fade-in-up">
-          {view.location?.description}
-        </p>
-
-        {view.npcsHere.length > 0 && (
-          <div>
-            <p className="text-xs uppercase tracking-wide text-[var(--ink-dim)] mb-1.5">{ui.game.peopleHere}</p>
-            <div className="flex flex-wrap gap-2">
-              {view.npcsHere.map((npc) => (
-                <Button key={npc.id} onClick={() => send({ type: "TALK_START", npcId: npc.id })} disabled={busy}>
-                  {ui.game.talkTo(npc.name)}
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {view.itemsHere.length > 0 && (
-          <div>
-            <p className="text-xs uppercase tracking-wide text-[var(--ink-dim)] mb-1.5">{ui.game.nearby}</p>
-            <div className="flex flex-wrap gap-2">
-              {view.itemsHere.map((item) => (
-                <Button key={item.id} onClick={() => send({ type: "TAKE_ITEM", itemId: item.id })} disabled={busy}>
-                  {ui.game.take(item.name)}
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {view.dialogue && (
+        {view.dialogue ? (
           <DialoguePanel
             key={`${view.dialogue.npcId}-${view.dialogue.text}`}
             dialogue={view.dialogue}
             onChoose={(choiceId) => send({ type: "DIALOGUE_CHOOSE", npcId: view.dialogue!.npcId, choiceId })}
             disabled={busy}
           />
+        ) : (
+          <>
+            <p key={`desc-${view.location?.id}`} className="leading-relaxed text-[15px] anim-fade-in-up">
+              {view.location?.description}
+            </p>
+
+            {view.npcsHere.length > 0 && (
+              <div>
+                <p className="text-xs uppercase tracking-wide text-[var(--ink-dim)] mb-1.5">{ui.game.peopleHere}</p>
+                <div className="flex flex-wrap gap-2">
+                  {view.npcsHere.map((npc) => (
+                    <Button key={npc.id} onClick={() => send({ type: "TALK_START", npcId: npc.id })} disabled={busy}>
+                      {ui.game.talkTo(npc.name)}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {view.itemsHere.length > 0 && (
+              <div>
+                <p className="text-xs uppercase tracking-wide text-[var(--ink-dim)] mb-1.5">{ui.game.nearby}</p>
+                <div className="flex flex-wrap gap-2">
+                  {view.itemsHere.map((item) => (
+                    <Button key={item.id} onClick={() => send({ type: "TAKE_ITEM", itemId: item.id })} disabled={busy}>
+                      {ui.game.take(item.name)}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {error && <p className="text-[var(--danger)] text-sm anim-fade-in-up">{error}</p>}
-
-        <div className="border-t border-[var(--panel-border)] pt-3 text-sm text-[var(--ink-dim)] space-y-1.5">
-          {log.slice(-8).map((line) => (
-            <p key={line.id} className="anim-fade-in-up">
-              {line.text}
-            </p>
-          ))}
-        </div>
       </main>
 
       <nav className="grid grid-cols-4 gap-1.5 mx-3 mb-3 shrink-0">
@@ -150,11 +156,7 @@ export function GameScreen({ runId, initialView, locale }: { runId: string; init
         <Modal title={ui.game.moveToTitle} onClose={() => setModal(null)}>
           <div className="flex flex-col gap-2">
             {view.exits.map((exit) => (
-              <Button
-                key={exit.id}
-                onClick={() => send({ type: "MOVE", targetLocationId: exit.id })}
-                disabled={busy}
-              >
+              <Button key={exit.id} onClick={() => send({ type: "MOVE", targetLocationId: exit.id })} disabled={busy}>
                 {exit.discovered ? exit.name : ui.game.unexploredPassage}
                 {exit.locked ? ui.game.lockedSuffix : ""}
               </Button>
@@ -198,8 +200,21 @@ export function GameScreen({ runId, initialView, locale }: { runId: string; init
 
       {modal === "map" && (
         <Modal title={ui.game.mapTitle} onClose={() => setModal(null)}>
-          <div className="h-80">
+          <div className="h-96">
             <IsometricShipMap view={view} onMove={(id) => send({ type: "MOVE", targetLocationId: id })} />
+          </div>
+        </Modal>
+      )}
+
+      {modal === "history" && (
+        <Modal title={ui.game.historyTitle} onClose={() => setModal(null)}>
+          <div className="flex flex-col gap-2 text-sm text-[var(--ink-dim)]">
+            {log.length === 0 && <p>{ui.game.historyEmpty}</p>}
+            {[...log].reverse().map((line) => (
+              <p key={line.id} className="border-b border-[var(--panel-border)] pb-2">
+                {line.text}
+              </p>
+            ))}
           </div>
         </Modal>
       )}
@@ -238,9 +253,9 @@ function DialoguePanel({
   disabled: boolean;
 }) {
   return (
-    <div className="pixel-border p-3.5 bg-black/20 anim-pop-in">
+    <div className="anim-pop-in">
       <p className="text-[var(--gold-bright)] text-xs uppercase tracking-wide mb-1.5">{dialogue.npcName}</p>
-      <p className="mb-3 italic leading-relaxed">{dialogue.text}</p>
+      <p className="mb-3 italic leading-relaxed text-[15px]">{dialogue.text}</p>
       <div className="flex flex-col gap-2">
         {dialogue.choices.map((choice) => (
           <Button key={choice.id} onClick={() => onChoose(choice.id)} disabled={disabled} className="text-left justify-start">

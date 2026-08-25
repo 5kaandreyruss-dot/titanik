@@ -3,20 +3,20 @@
 import type { RunView } from "@/lib/engine/view";
 
 // Hand-placed isometric tile centers for the vertical-slice location set.
-// Rows follow the ship's real deck order (top = upper decks, bottom = lower
-// decks); columns give each deck band a light left/right stagger so the
-// whole thing reads as a stylized axonometric cutaway rather than a flat
-// list. Extend this table when new locations ship.
+// Rows follow the ship's real deck order (top = upper decks, bottom =
+// lower decks); columns give each deck band a light left/right stagger so
+// the whole thing reads as a stylized axonometric cutaway rather than a
+// flat list. Extend this table when new locations ship.
 const TILES: Record<string, { x: number; y: number; tier: number }> = {
-  bridge_wing: { x: 55, y: 26, tier: 0 },
-  boat_deck: { x: 230, y: 26, tier: 0 },
-  a_deck_promenade: { x: 142, y: 60, tier: 1 },
-  b_deck_corridor: { x: 142, y: 100, tier: 2 },
-  first_class_dining: { x: 234, y: 100, tier: 2 },
-  g_deck_thirdclass_berths: { x: 52, y: 132, tier: 3 },
-  c_deck_purser_office: { x: 142, y: 140, tier: 3 },
-  engine_room_access: { x: 142, y: 180, tier: 4 },
-  boiler_room_6: { x: 142, y: 216, tier: 5 },
+  bridge_wing: { x: 58, y: 26, tier: 0 },
+  boat_deck: { x: 250, y: 26, tier: 0 },
+  a_deck_promenade: { x: 154, y: 68, tier: 1 },
+  b_deck_corridor: { x: 154, y: 112, tier: 2 },
+  first_class_dining: { x: 258, y: 150, tier: 2 },
+  g_deck_thirdclass_berths: { x: 50, y: 150, tier: 3 },
+  c_deck_purser_office: { x: 154, y: 156, tier: 3 },
+  engine_room_access: { x: 154, y: 200, tier: 4 },
+  boiler_room_6: { x: 154, y: 240, tier: 5 },
 };
 
 const TIER_COLORS = ["#e2c084", "#c9a35f", "#a3854f", "#7d6641", "#5c4b34", "#3f3527"];
@@ -28,25 +28,46 @@ function tilePath(cx: number, cy: number) {
   return `${cx},${cy - HALF_H} ${cx + HALF_W},${cy} ${cx},${cy + HALF_H} ${cx - HALF_W},${cy}`;
 }
 
+interface LabelRect {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+}
+
+function overlaps(a: LabelRect, b: LabelRect): boolean {
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
 export function IsometricShipMap({
   view,
   onMove,
-  compact = false,
 }: {
   view: RunView;
   onMove?: (locationId: string) => void;
-  compact?: boolean;
 }) {
   const currentId = view.location?.id;
   const reachable = new Map(view.exits.map((e) => [e.id, e]));
   const entries = Object.entries(TILES).sort((a, b) => a[1].y - b[1].y);
 
+  const placedLabels: LabelRect[] = [];
+  function tryPlaceLabel(x: number, y: number, text: string, fontSize: number): boolean {
+    const w = text.length * fontSize * 0.56;
+    const rect: LabelRect = { left: x - w / 2, right: x + w / 2, top: y - fontSize, bottom: y + 2 };
+    if (placedLabels.some((r) => overlaps(r, rect))) return false;
+    placedLabels.push(rect);
+    return true;
+  }
+
+  // reserve space for the current tile's label first so it always wins collisions
+  if (currentId && TILES[currentId]) {
+    const t = TILES[currentId];
+    const mapEntry = view.map.find((m) => m.id === currentId);
+    if (mapEntry) tryPlaceLabel(t.x, t.y - HALF_H - 6, mapEntry.name, 9.5);
+  }
+
   return (
-    <svg
-      viewBox="0 0 300 240"
-      className="w-full h-full"
-      preserveAspectRatio={compact ? "xMidYMid meet" : "xMidYMid meet"}
-    >
+    <svg viewBox="0 0 320 262" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
       <defs>
         <radialGradient id="tileGlow" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="var(--gold-bright)" stopOpacity="0.35" />
@@ -86,17 +107,13 @@ export function IsometricShipMap({
         const color = TIER_COLORS[tile.tier] ?? TIER_COLORS[TIER_COLORS.length - 1];
         const elevation = isCurrent ? 15 : mapEntry.discovered ? 9 : 5;
         const top = tilePath(tile.x, tile.y);
+        const showLabel = !isCurrent && (canWalkTo || mapEntry.discovered)
+          ? tryPlaceLabel(tile.x, tile.y - HALF_H - 6, mapEntry.discovered ? mapEntry.name : "", 7.5)
+          : false;
 
         if (!mapEntry.discovered) {
           return (
-            <polygon
-              key={id}
-              points={top}
-              fill="#1a2635"
-              fillOpacity={0.6}
-              stroke="#2b3d51"
-              strokeWidth={0.5}
-            />
+            <polygon key={id} points={top} fill="#1a2635" fillOpacity={0.6} stroke="#2b3d51" strokeWidth={0.5} />
           );
         }
 
@@ -108,19 +125,16 @@ export function IsometricShipMap({
           >
             {isCurrent && <circle cx={tile.x} cy={tile.y} r={26} fill="url(#tileGlow)" />}
 
-            {/* left wall */}
             <polygon
               points={`${tile.x - HALF_W},${tile.y} ${tile.x},${tile.y + HALF_H} ${tile.x},${tile.y + HALF_H + elevation} ${tile.x - HALF_W},${tile.y + elevation}`}
               fill={color}
               fillOpacity={0.5}
             />
-            {/* right wall */}
             <polygon
               points={`${tile.x + HALF_W},${tile.y} ${tile.x},${tile.y + HALF_H} ${tile.x},${tile.y + HALF_H + elevation} ${tile.x + HALF_W},${tile.y + elevation}`}
               fill={color}
               fillOpacity={0.75}
             />
-            {/* top face */}
             <polygon
               points={top}
               fill={isCurrent ? "var(--gold-bright)" : color}
@@ -128,16 +142,18 @@ export function IsometricShipMap({
               strokeWidth={isCurrent ? 1 : 0.5}
             />
 
-            <text
-              x={tile.x}
-              y={tile.y - HALF_H - 6}
-              textAnchor="middle"
-              fontSize={isCurrent ? 9.5 : 7.5}
-              fontWeight={isCurrent ? 700 : 500}
-              fill={isCurrent ? "var(--gold-bright)" : "var(--ink-dim)"}
-            >
-              {mapEntry.name}
-            </text>
+            {(isCurrent || showLabel) && (
+              <text
+                x={tile.x}
+                y={tile.y - HALF_H - 6}
+                textAnchor="middle"
+                fontSize={isCurrent ? 9.5 : 7.5}
+                fontWeight={isCurrent ? 700 : 500}
+                fill={isCurrent ? "var(--gold-bright)" : "var(--ink-dim)"}
+              >
+                {mapEntry.name}
+              </text>
+            )}
           </g>
         );
       })}

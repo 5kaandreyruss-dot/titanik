@@ -57,6 +57,8 @@ export interface UiDictionary {
     locationsDiscoveredLabel: string;
     secretsUncoveredLabel: string;
     shipCalm: string;
+    historyTitle: string;
+    historyEmpty: string;
   };
   ship: {
     none: string;
@@ -230,6 +232,8 @@ const en: UiDictionary = {
     locationsDiscoveredLabel: "Locations discovered",
     secretsUncoveredLabel: "Secrets uncovered",
     shipCalm: "The ship feels calm tonight.",
+    historyTitle: "History",
+    historyEmpty: "Nothing has happened yet.",
   },
   ship: {
     none: "Calm",
@@ -404,6 +408,8 @@ const ru: UiDictionary = {
     locationsDiscoveredLabel: "Исследовано локаций",
     secretsUncoveredLabel: "Раскрыто секретов",
     shipCalm: "Этой ночью на корабле спокойно.",
+    historyTitle: "История",
+    historyEmpty: "Пока ничего не произошло.",
   },
   ship: {
     none: "Спокойно",
