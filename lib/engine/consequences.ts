@@ -1,5 +1,6 @@
 import type { Consequence, GameRunState, EngineEffect } from "@/lib/engine/types";
 import type { ContentRegistry } from "@/lib/content";
+import { engineMessages } from "@/lib/engine/messages";
 
 export function applyConsequence(
   content: ContentRegistry,
@@ -12,7 +13,7 @@ export function applyConsequence(
       if (!state.knowledge.includes(consequence.id)) {
         state.knowledge.push(consequence.id);
         const def = content.knowledgeById[consequence.id];
-        effects.push({ kind: "knowledge", text: `New knowledge: ${def?.title ?? consequence.id}` });
+        effects.push({ kind: "knowledge", text: engineMessages.newKnowledge(def.title) });
       }
       break;
     }
@@ -32,7 +33,7 @@ export function applyConsequence(
       const loc = state.locations[consequence.id];
       if (loc) {
         loc.locked = false;
-        effects.push({ kind: "location", text: `Location unlocked: ${content.locationsById[consequence.id]?.name ?? consequence.id}` });
+        effects.push({ kind: "location", text: engineMessages.locationUnlocked(content.locationsById[consequence.id].name) });
       }
       break;
     }
@@ -47,7 +48,7 @@ export function applyConsequence(
       if (existing) existing.quantity += qty;
       else state.inventory.push({ itemId: consequence.id, quantity: qty });
       const def = content.itemsById[consequence.id];
-      effects.push({ kind: "item", text: `Item obtained: ${def?.name ?? consequence.id}` });
+      effects.push({ kind: "item", text: engineMessages.itemObtained(def.name) });
       break;
     }
     case "removeItem": {
@@ -88,7 +89,7 @@ export function applyConsequence(
     case "rescuePerson": {
       if (!state.rescuedPeople.includes(consequence.id)) {
         state.rescuedPeople.push(consequence.id);
-        effects.push({ kind: "log", text: `Rescued: ${content.npcsById[consequence.id]?.name ?? consequence.id}` });
+        effects.push({ kind: "log", text: engineMessages.rescued(content.npcsById[consequence.id].name) });
       }
       break;
     }

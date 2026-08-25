@@ -3,10 +3,15 @@ import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
 import { SubscriptionService } from "@/lib/subscription";
 import { getContentRegistry } from "@/lib/content";
+import { getLocale } from "@/lib/i18n/locale";
+import { getUiDictionary } from "@/lib/i18n/ui";
+import { t } from "@/lib/i18n/types";
 
 export async function GET() {
+  const locale = await getLocale();
+  const ui = getUiDictionary(locale);
   const user = await requireUser().catch(() => null);
-  if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: ui.errors.notAuthenticated }, { status: 401 });
 
   const [totalRuns, finishedRuns, achievements, discoveries, leaderboardEntries] = await Promise.all([
     prisma.gameRun.count({ where: { userId: user.id } }),
@@ -16,7 +21,6 @@ export async function GET() {
     }),
     prisma.playerAchievement.findMany({
       where: { userId: user.id },
-      include: { achievement: true },
       orderBy: { unlockedAt: "desc" },
     }),
     prisma.discovery.findMany({ where: { userId: user.id } }),
@@ -40,13 +44,16 @@ export async function GET() {
     survivals,
     peopleRescued,
     endingsDiscovered,
-    achievements: achievements.map((a) => ({
-      id: a.achievementId,
-      name: a.achievement.name,
-      description: a.achievement.description,
-      secret: a.achievement.secret,
-      unlockedAt: a.unlockedAt,
-    })),
+    achievements: achievements.map((a) => {
+      const def = content.achievementsById[a.achievementId];
+      return {
+        id: a.achievementId,
+        name: def ? t(def.name, locale) : a.achievementId,
+        description: def ? t(def.description, locale) : "",
+        secret: def?.secret ?? false,
+        unlockedAt: a.unlockedAt,
+      };
+    }),
     knowledgeDiscoveredCount: discoveries.length,
   });
 }

@@ -5,6 +5,7 @@ import { evaluateAll } from "@/lib/engine/conditions";
 import { applyConsequence } from "@/lib/engine/consequences";
 import { resolveSkillCheck } from "@/lib/engine/skillCheck";
 import { SeededRng } from "@/lib/engine/rng";
+import { engineMessages } from "@/lib/engine/messages";
 
 const DIALOGUE_CHOICE_TIME_MINUTES = 3;
 
@@ -25,15 +26,15 @@ export function startDialogue(
   const npc = state.npcs[npcId];
   const tree = content.dialoguesByNpcId[npcId];
   if (!npc || !npc.alive) {
-    effects.push({ kind: "error", text: "They aren't here." });
+    effects.push({ kind: "error", text: engineMessages.theyArentHere() });
     return;
   }
   if (npc.locationId !== state.currentLocationId) {
-    effects.push({ kind: "error", text: "They aren't here." });
+    effects.push({ kind: "error", text: engineMessages.theyArentHere() });
     return;
   }
   if (!tree) {
-    effects.push({ kind: "error", text: "They have nothing to say." });
+    effects.push({ kind: "error", text: engineMessages.theyHaveNothingToSay() });
     return;
   }
   const nodeId = resolveEntryNodeId(content, npcId, state);
@@ -61,14 +62,14 @@ export function chooseDialogueOption(
   effects: EngineEffect[],
 ): void {
   if (!state.activeDialogue || state.activeDialogue.npcId !== npcId) {
-    effects.push({ kind: "error", text: "No conversation is active." });
+    effects.push({ kind: "error", text: engineMessages.noActiveConversation() });
     return;
   }
   const tree = content.dialoguesByNpcId[npcId];
   const node = tree.nodes[state.activeDialogue.nodeId];
   const choice = node.choices.find((c) => c.id === choiceId && evaluateAll(c.conditions, state));
   if (!choice) {
-    effects.push({ kind: "error", text: "That's not something you can say right now." });
+    effects.push({ kind: "error", text: engineMessages.notSomethingYouCanSayNow() });
     return;
   }
 

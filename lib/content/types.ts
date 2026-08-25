@@ -5,12 +5,13 @@ import type {
   SocialClass,
   StatKey,
 } from "@/lib/engine/types";
+import type { LocalizedText } from "@/lib/i18n/types";
 
 export interface LocationDefinition {
   id: string;
-  name: string;
-  description: string;
-  deck: string;
+  name: LocalizedText;
+  description: LocalizedText;
+  deck: LocalizedText;
   exits: string[]; // location ids reachable directly from here
   startsDiscovered: boolean;
   startsLocked: boolean;
@@ -22,20 +23,20 @@ export interface LocationDefinition {
 
 export interface ItemDefinition {
   id: string;
-  name: string;
-  description: string;
+  name: LocalizedText;
+  description: LocalizedText;
   consumable: boolean;
   actions: ("use" | "give" | "show" | "drop" | "inspect")[];
 }
 
 export interface NpcDefinition {
   id: string;
-  name: string;
+  name: string; // proper noun, not translated
   age: number;
   gender: string;
-  profession: string;
+  profession: LocalizedText;
   socialClass: SocialClass;
-  personality: string;
+  personality: string; // internal authoring notes, never shown to players
   goals: string;
   fears: string;
   secrets: string;
@@ -47,22 +48,22 @@ export interface NpcDefinition {
 
 export interface DialogueChoice {
   id: string;
-  text: string;
+  text: LocalizedText;
   conditions?: Condition[];
   consequences?: Consequence[];
-  npcReply?: string;
+  npcReply?: LocalizedText;
   nextNodeId?: string; // continue to another node, or end dialogue if omitted
-  hint?: string; // soft flavor text about difficulty, shown instead of numbers
+  hint?: LocalizedText; // soft flavor text about difficulty, shown instead of numbers
   skillCheck?: { stat: StatKey; difficulty: number }; // 1-10 scale
   successConsequences?: Consequence[];
   failConsequences?: Consequence[];
-  successNpcReply?: string;
-  failNpcReply?: string;
+  successNpcReply?: LocalizedText;
+  failNpcReply?: LocalizedText;
 }
 
 export interface DialogueNode {
   id: string;
-  npcText: string;
+  npcText: LocalizedText;
   choices: DialogueChoice[];
 }
 
@@ -75,27 +76,27 @@ export interface DialogueTree {
 
 export interface EventDefinition {
   id: string;
-  name: string;
+  name: string; // internal authoring label, never shown to players
   category: "common" | "rare" | "historical" | "narrative" | "secret";
   trigger: Condition[];
   oneShot: boolean;
   consequences: Consequence[];
-  logText: string;
+  logText: LocalizedText;
 }
 
 export interface EndingDefinition {
   id: string;
-  name: string;
+  name: LocalizedText;
   category: "positive" | "neutral" | "negative" | "secret";
   priority: number; // higher priority wins if multiple match same tick
   conditions: Condition[];
-  epilogueText: string;
+  epilogueText: LocalizedText;
 }
 
 export interface AchievementDefinition {
   id: string;
-  name: string;
-  description: string;
+  name: LocalizedText;
+  description: LocalizedText;
   secret: boolean;
   // Evaluated against a finished GameRunState + aggregate user stats.
   check: (ctx: { state: import("@/lib/engine/types").GameRunState }) => boolean;
@@ -103,9 +104,9 @@ export interface AchievementDefinition {
 
 export interface CharacterArchetype {
   id: string;
-  name: string;
+  name: LocalizedText;
   socialClass: SocialClass;
-  description: string;
+  description: LocalizedText;
   statBias: Partial<CharacterStats>; // added on top of base rolls for these stats
   startingLocationId: string;
   startingItems: string[];
@@ -116,6 +117,6 @@ export interface CharacterArchetype {
 export interface KnowledgeDefinition {
   id: string;
   category: "People" | "Locations" | "Events" | "Secrets" | "Technical" | "Endings";
-  title: string;
-  text: string;
+  title: LocalizedText;
+  text: LocalizedText;
 }

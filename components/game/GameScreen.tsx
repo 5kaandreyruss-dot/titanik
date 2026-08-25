@@ -7,6 +7,8 @@ import type { RunView } from "@/lib/engine/view";
 import type { PlayerAction } from "@/lib/engine/types";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { getUiDictionary } from "@/lib/i18n/ui";
+import type { Locale } from "@/lib/i18n/types";
 
 interface ActionResponse {
   view: RunView;
@@ -15,15 +17,8 @@ interface ActionResponse {
   finished: boolean;
 }
 
-const SHIP_LABELS: Record<string, string> = {
-  none: "Calm",
-  light: "Slight",
-  moderate: "Noticeable",
-  severe: "Severe",
-  critical: "Critical",
-};
-
-export function GameScreen({ runId, initialView }: { runId: string; initialView: RunView }) {
+export function GameScreen({ runId, initialView, locale }: { runId: string; initialView: RunView; locale: Locale }) {
+  const ui = getUiDictionary(locale);
   const router = useRouter();
   const [view, setView] = useState(initialView);
   const [log, setLog] = useState<string[]>(initialView.log.map((l) => l.text));
@@ -43,14 +38,14 @@ export function GameScreen({ runId, initialView }: { runId: string; initialView:
       if (res.newAchievements.length > 0) setNewAchievements(res.newAchievements);
       setModal(null);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Something went wrong.");
+      setError(e instanceof ApiError ? e.message : ui.errors.somethingWrong);
     } finally {
       setBusy(false);
     }
   }
 
   if (view.ending) {
-    return <EndingScreen view={view} onMenu={() => router.push("/menu")} />;
+    return <EndingScreen view={view} ui={ui} onMenu={() => router.push("/menu")} />;
   }
 
   return (
@@ -67,7 +62,7 @@ export function GameScreen({ runId, initialView }: { runId: string; initialView:
       </header>
 
       <div className="mx-2 scene-bg pixel-border h-40 flex items-end p-3 text-sm text-[var(--ink-dim)]">
-        <ShipStatus view={view} />
+        <ShipStatus view={view} ui={ui} />
       </div>
 
       <main className="flex-1 mx-2 mt-2 panel p-4 space-y-3">
@@ -75,11 +70,11 @@ export function GameScreen({ runId, initialView }: { runId: string; initialView:
 
         {view.npcsHere.length > 0 && (
           <div>
-            <p className="text-xs uppercase tracking-wide text-[var(--ink-dim)] mb-1">People here</p>
+            <p className="text-xs uppercase tracking-wide text-[var(--ink-dim)] mb-1">{ui.game.peopleHere}</p>
             <div className="flex flex-wrap gap-2">
               {view.npcsHere.map((npc) => (
                 <Button key={npc.id} onClick={() => send({ type: "TALK_START", npcId: npc.id })} disabled={busy}>
-                  Talk: {npc.name}
+                  {ui.game.talkTo(npc.name)}
                 </Button>
               ))}
             </div>
@@ -88,18 +83,24 @@ export function GameScreen({ runId, initialView }: { runId: string; initialView:
 
         {view.itemsHere.length > 0 && (
           <div>
-            <p className="text-xs uppercase tracking-wide text-[var(--ink-dim)] mb-1">Nearby</p>
+            <p className="text-xs uppercase tracking-wide text-[var(--ink-dim)] mb-1">{ui.game.nearby}</p>
             <div className="flex flex-wrap gap-2">
               {view.itemsHere.map((item) => (
                 <Button key={item.id} onClick={() => send({ type: "TAKE_ITEM", itemId: item.id })} disabled={busy}>
-                  Take {item.name}
+                  {ui.game.take(item.name)}
                 </Button>
               ))}
             </div>
           </div>
         )}
 
-        {view.dialogue && <DialoguePanel dialogue={view.dialogue} onChoose={(choiceId) => send({ type: "DIALOGUE_CHOOSE", npcId: view.dialogue!.npcId, choiceId })} disabled={busy} />}
+        {view.dialogue && (
+          <DialoguePanel
+            dialogue={view.dialogue}
+            onChoose={(choiceId) => send({ type: "DIALOGUE_CHOOSE", npcId: view.dialogue!.npcId, choiceId })}
+            disabled={busy}
+          />
+        )}
 
         {error && <p className="text-[var(--danger)] text-sm">{error}</p>}
 
@@ -112,21 +113,21 @@ export function GameScreen({ runId, initialView }: { runId: string; initialView:
 
       <nav className="grid grid-cols-4 gap-1 m-2">
         <Button onClick={() => send({ type: "LOOK_AROUND" })} disabled={busy}>
-          Look
+          {ui.game.look}
         </Button>
         <Button onClick={() => setModal("move")} disabled={busy}>
-          Move
+          {ui.game.move}
         </Button>
         <Button onClick={() => setModal("inventory")} disabled={busy}>
-          Inventory
+          {ui.game.inventory}
         </Button>
         <Button onClick={() => setModal("map")} disabled={busy}>
-          Map
+          {ui.game.map}
         </Button>
       </nav>
 
       {modal === "move" && (
-        <Modal title="Move to..." onClose={() => setModal(null)}>
+        <Modal title={ui.game.moveToTitle} onClose={() => setModal(null)}>
           <div className="flex flex-col gap-2">
             {view.exits.map((exit) => (
               <Button
@@ -134,8 +135,8 @@ export function GameScreen({ runId, initialView }: { runId: string; initialView:
                 onClick={() => send({ type: "MOVE", targetLocationId: exit.id })}
                 disabled={busy}
               >
-                {exit.discovered ? exit.name : "Unexplored passage"}
-                {exit.locked ? " (locked)" : ""}
+                {exit.discovered ? exit.name : ui.game.unexploredPassage}
+                {exit.locked ? ui.game.lockedSuffix : ""}
               </Button>
             ))}
           </div>
@@ -143,8 +144,8 @@ export function GameScreen({ runId, initialView }: { runId: string; initialView:
       )}
 
       {modal === "inventory" && (
-        <Modal title="Inventory" onClose={() => setModal(null)}>
-          {view.inventory.length === 0 && <p className="text-[var(--ink-dim)] text-sm">You carry nothing of note.</p>}
+        <Modal title={ui.game.inventoryTitle} onClose={() => setModal(null)}>
+          {view.inventory.length === 0 && <p className="text-[var(--ink-dim)] text-sm">{ui.game.inventoryEmpty}</p>}
           <div className="flex flex-col gap-3">
             {view.inventory.map((item) => (
               <div key={item.itemId} className="border-b border-[var(--panel-border)] pb-2">
@@ -155,7 +156,7 @@ export function GameScreen({ runId, initialView }: { runId: string; initialView:
                 <div className="flex gap-2 flex-wrap">
                   {item.actions.includes("use") && (
                     <Button onClick={() => send({ type: "USE_ITEM", itemId: item.itemId })} disabled={busy}>
-                      Use
+                      {ui.game.use}
                     </Button>
                   )}
                   {item.actions.includes("give") &&
@@ -165,7 +166,7 @@ export function GameScreen({ runId, initialView }: { runId: string; initialView:
                         onClick={() => send({ type: "GIVE_ITEM", itemId: item.itemId, npcId: npc.id })}
                         disabled={busy}
                       >
-                        Give to {npc.name}
+                        {ui.game.giveTo(npc.name)}
                       </Button>
                     ))}
                 </div>
@@ -176,7 +177,7 @@ export function GameScreen({ runId, initialView }: { runId: string; initialView:
       )}
 
       {modal === "map" && (
-        <Modal title="Ship Map" onClose={() => setModal(null)}>
+        <Modal title={ui.game.mapTitle} onClose={() => setModal(null)}>
           <div className="flex flex-col gap-1">
             {view.map.map((loc) => (
               <div
@@ -185,7 +186,7 @@ export function GameScreen({ runId, initialView }: { runId: string; initialView:
                   loc.isCurrent ? "bg-[var(--gold)] text-[#14202b] font-semibold" : "bg-black/20"
                 }`}
               >
-                <span>{loc.discovered ? loc.name : "???"}</span>
+                <span>{loc.discovered ? loc.name : ui.game.unknownLocation}</span>
                 <span className="text-xs opacity-70">{loc.discovered ? loc.deck : ""}</span>
               </div>
             ))}
@@ -198,19 +199,21 @@ export function GameScreen({ runId, initialView }: { runId: string; initialView:
           className="fixed bottom-4 left-1/2 -translate-x-1/2 panel px-4 py-2 text-sm text-[var(--gold)] cursor-pointer"
           onClick={() => setNewAchievements([])}
         >
-          Achievement unlocked! Tap to dismiss.
+          {ui.game.achievementUnlocked}
         </div>
       )}
     </div>
   );
 }
 
-function ShipStatus({ view }: { view: RunView }) {
+function ShipStatus({ view, ui }: { view: RunView; ui: ReturnType<typeof getUiDictionary> }) {
   const notable = Object.entries(view.ship).filter(([, v]) => v !== "none");
-  if (notable.length === 0) return <span>The ship feels calm tonight.</span>;
+  if (notable.length === 0) return <span>{ui.game.shipCalm}</span>;
   return (
     <span>
-      {notable.map(([k, v]) => `${k}: ${SHIP_LABELS[v as string]}`).join(" · ")}
+      {notable
+        .map(([k, v]) => `${ui.ship[k as keyof typeof ui.ship]}: ${ui.ship[v as keyof typeof ui.ship]}`)
+        .join(" · ")}
     </span>
   );
 }
@@ -240,7 +243,15 @@ function DialoguePanel({
   );
 }
 
-function EndingScreen({ view, onMenu }: { view: RunView; onMenu: () => void }) {
+function EndingScreen({
+  view,
+  ui,
+  onMenu,
+}: {
+  view: RunView;
+  ui: ReturnType<typeof getUiDictionary>;
+  onMenu: () => void;
+}) {
   const categoryColor =
     view.ending?.category === "positive"
       ? "var(--positive)"
@@ -255,13 +266,15 @@ function EndingScreen({ view, onMenu }: { view: RunView; onMenu: () => void }) {
         </h1>
         <p className="leading-relaxed text-[var(--ink-dim)]">{view.ending?.epilogueText}</p>
         <div className="text-sm text-left border-t border-[var(--panel-border)] pt-3 space-y-1">
-          <p>Character: {view.characterName}</p>
-          <p>People rescued: {view.rescuedPeople.length}</p>
-          <p>Locations discovered: {view.map.filter((l) => l.discovered).length} / {view.map.length}</p>
-          <p>Secrets uncovered: {view.knowledge.length}</p>
+          <p>{ui.game.characterLabel}: {view.characterName}</p>
+          <p>{ui.game.peopleRescuedLabel}: {view.rescuedPeople.length}</p>
+          <p>
+            {ui.game.locationsDiscoveredLabel}: {view.map.filter((l) => l.discovered).length} / {view.map.length}
+          </p>
+          <p>{ui.game.secretsUncoveredLabel}: {view.knowledge.length}</p>
         </div>
         <Button variant="primary" onClick={onMenu} className="w-full">
-          Return to Menu
+          {ui.game.returnToMenu}
         </Button>
       </div>
     </div>
