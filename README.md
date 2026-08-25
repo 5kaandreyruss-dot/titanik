@@ -14,7 +14,7 @@ Next.js (App Router) + TypeScript + React + Tailwind CSS + PostgreSQL + Prisma.
 ## Local development
 
 ```bash
-cp .env.example .env         # set DATABASE_URL, SESSION_SECRET
+cp .env.example .env         # set DATABASE_URL
 npm install
 npx prisma migrate dev
 npm run db:seed
@@ -22,6 +22,10 @@ npm run dev
 ```
 
 Tests: `npm run test`. Content validation: `npm run validate:content`.
+
+## Deployment
+
+See `DEPLOYMENT.md` for a free-tier deployment guide (Vercel + Neon Postgres).
 
 ## Status
 
