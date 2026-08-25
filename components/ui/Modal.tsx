@@ -16,11 +16,11 @@ export function Modal({
       onClick={onClose}
     >
       <div
-        className="panel w-full sm:max-w-md max-h-[85vh] overflow-y-auto rounded-t-lg sm:rounded"
+        className="panel w-full sm:max-w-md max-h-[85vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-[var(--panel-border)] p-4 sticky top-0 bg-[var(--panel)]">
-          <h2 className="text-[var(--gold)] font-semibold tracking-wide">{title}</h2>
+        <div className="flex items-center justify-between border-b border-[var(--panel-border)] p-4 sticky top-0 bg-[var(--panel)] rounded-t-2xl">
+          <h2 className="font-display text-[var(--gold-bright)] font-semibold tracking-wide">{title}</h2>
           <button onClick={onClose} className="text-[var(--ink-dim)] text-2xl leading-none px-2">
             &times;
           </button>

@@ -7,6 +7,7 @@ import type { RunView } from "@/lib/engine/view";
 import type { PlayerAction } from "@/lib/engine/types";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { ShipMiniMap } from "@/components/game/ShipMiniMap";
 import { getUiDictionary } from "@/lib/i18n/ui";
 import type { Locale } from "@/lib/i18n/types";
 
@@ -49,28 +50,31 @@ export function GameScreen({ runId, initialView, locale }: { runId: string; init
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="panel m-2 px-4 py-2 flex items-center justify-between text-sm">
+    <div className="h-dvh flex flex-col overflow-hidden">
+      <header className="panel mx-3 mt-3 px-4 py-2.5 flex items-center justify-between text-sm shrink-0">
         <div>
-          <div className="text-[var(--gold)] font-mono text-lg leading-none">{view.time}</div>
-          <div className="text-[var(--ink-dim)] text-xs">{view.date}</div>
+          <div className="text-[var(--gold-bright)] font-mono text-lg leading-none tracking-wide">{view.time}</div>
+          <div className="text-[var(--ink-dim)] text-xs mt-0.5">{view.date}</div>
         </div>
         <div className="text-right">
-          <div className="font-semibold">{view.location?.name}</div>
-          <div className="text-[var(--ink-dim)] text-xs">{view.location?.deck}</div>
+          <div className="font-display font-semibold text-[var(--ink)]">{view.location?.name}</div>
+          <div className="text-[var(--ink-dim)] text-xs mt-0.5">{view.location?.deck}</div>
         </div>
       </header>
 
-      <div className="mx-2 scene-bg pixel-border h-40 flex items-end p-3 text-sm text-[var(--ink-dim)]">
-        <ShipStatus view={view} ui={ui} />
+      <div className="mx-3 mt-2 panel scene-bg h-44 shrink-0 relative overflow-hidden">
+        <ShipMiniMap view={view} />
+        <div className="absolute bottom-2 left-3 right-3 text-xs text-[var(--ink-dim)]">
+          <ShipStatus view={view} ui={ui} />
+        </div>
       </div>
 
-      <main className="flex-1 mx-2 mt-2 panel p-4 space-y-3">
-        <p className="leading-relaxed">{view.location?.description}</p>
+      <main className="flex-1 overflow-y-auto mx-3 mt-2 mb-2 panel p-4 space-y-3">
+        <p className="leading-relaxed text-[15px]">{view.location?.description}</p>
 
         {view.npcsHere.length > 0 && (
           <div>
-            <p className="text-xs uppercase tracking-wide text-[var(--ink-dim)] mb-1">{ui.game.peopleHere}</p>
+            <p className="text-xs uppercase tracking-wide text-[var(--ink-dim)] mb-1.5">{ui.game.peopleHere}</p>
             <div className="flex flex-wrap gap-2">
               {view.npcsHere.map((npc) => (
                 <Button key={npc.id} onClick={() => send({ type: "TALK_START", npcId: npc.id })} disabled={busy}>
@@ -83,7 +87,7 @@ export function GameScreen({ runId, initialView, locale }: { runId: string; init
 
         {view.itemsHere.length > 0 && (
           <div>
-            <p className="text-xs uppercase tracking-wide text-[var(--ink-dim)] mb-1">{ui.game.nearby}</p>
+            <p className="text-xs uppercase tracking-wide text-[var(--ink-dim)] mb-1.5">{ui.game.nearby}</p>
             <div className="flex flex-wrap gap-2">
               {view.itemsHere.map((item) => (
                 <Button key={item.id} onClick={() => send({ type: "TAKE_ITEM", itemId: item.id })} disabled={busy}>
@@ -104,14 +108,14 @@ export function GameScreen({ runId, initialView, locale }: { runId: string; init
 
         {error && <p className="text-[var(--danger)] text-sm">{error}</p>}
 
-        <div className="border-t border-[var(--panel-border)] pt-3 max-h-32 overflow-y-auto text-sm text-[var(--ink-dim)] space-y-1">
+        <div className="border-t border-[var(--panel-border)] pt-3 text-sm text-[var(--ink-dim)] space-y-1.5">
           {log.slice(-8).map((line, i) => (
             <p key={i}>{line}</p>
           ))}
         </div>
       </main>
 
-      <nav className="grid grid-cols-4 gap-1 m-2">
+      <nav className="grid grid-cols-4 gap-1.5 mx-3 mb-3 shrink-0">
         <Button onClick={() => send({ type: "LOOK_AROUND" })} disabled={busy}>
           {ui.game.look}
         </Button>
@@ -182,8 +186,8 @@ export function GameScreen({ runId, initialView, locale }: { runId: string; init
             {view.map.map((loc) => (
               <div
                 key={loc.id}
-                className={`px-3 py-2 rounded text-sm flex justify-between ${
-                  loc.isCurrent ? "bg-[var(--gold)] text-[#14202b] font-semibold" : "bg-black/20"
+                className={`px-3 py-2 rounded-lg text-sm flex justify-between ${
+                  loc.isCurrent ? "bg-[var(--gold)] text-[#1a1408] font-semibold" : "bg-black/20"
                 }`}
               >
                 <span>{loc.discovered ? loc.name : ui.game.unknownLocation}</span>
@@ -196,7 +200,7 @@ export function GameScreen({ runId, initialView, locale }: { runId: string; init
 
       {newAchievements.length > 0 && (
         <div
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 panel px-4 py-2 text-sm text-[var(--gold)] cursor-pointer"
+          className="fixed bottom-20 left-1/2 -translate-x-1/2 panel px-4 py-2 text-sm text-[var(--gold-bright)] cursor-pointer z-40"
           onClick={() => setNewAchievements([])}
         >
           {ui.game.achievementUnlocked}
@@ -228,9 +232,9 @@ function DialoguePanel({
   disabled: boolean;
 }) {
   return (
-    <div className="pixel-border p-3 bg-black/30">
-      <p className="text-[var(--gold)] text-xs uppercase mb-1">{dialogue.npcName}</p>
-      <p className="mb-3 italic">{dialogue.text}</p>
+    <div className="pixel-border p-3.5 bg-black/20">
+      <p className="text-[var(--gold-bright)] text-xs uppercase tracking-wide mb-1.5">{dialogue.npcName}</p>
+      <p className="mb-3 italic leading-relaxed">{dialogue.text}</p>
       <div className="flex flex-col gap-2">
         {dialogue.choices.map((choice) => (
           <Button key={choice.id} onClick={() => onChoose(choice.id)} disabled={disabled} className="text-left justify-start">
@@ -261,7 +265,7 @@ function EndingScreen({
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="panel max-w-md w-full p-6 text-center space-y-4">
-        <h1 className="text-2xl font-bold" style={{ color: categoryColor }}>
+        <h1 className="font-display text-2xl font-bold" style={{ color: categoryColor }}>
           {view.ending?.name}
         </h1>
         <p className="leading-relaxed text-[var(--ink-dim)]">{view.ending?.epilogueText}</p>

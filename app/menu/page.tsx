@@ -28,7 +28,7 @@ export default async function MenuPage() {
     <div className="min-h-screen flex flex-col items-center justify-center p-4 gap-6 relative">
       <LocaleSwitcher locale={locale} className="absolute top-4 right-4" />
       <div className="text-center">
-        <h1 className="text-3xl font-bold tracking-widest text-[var(--gold)]">{ui.landing.title}</h1>
+        <h1 className="font-display text-3xl font-bold tracking-widest text-[var(--gold-bright)]">{ui.landing.title}</h1>
         <p className="text-sm tracking-[0.3em] text-[var(--ink-dim)]">{ui.landing.subtitle}</p>
       </div>
 

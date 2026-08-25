@@ -16,7 +16,7 @@ export default async function Home() {
     <div className="flex-1 flex flex-col items-center justify-center p-6 gap-8 text-center relative">
       <LocaleSwitcher locale={locale} className="absolute top-4 right-4" />
       <div>
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-widest text-[var(--gold)]">{ui.landing.title}</h1>
+        <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-widest text-[var(--gold-bright)]">{ui.landing.title}</h1>
         <p className="text-sm sm:text-base tracking-[0.4em] text-[var(--ink-dim)] mt-2">{ui.landing.subtitle}</p>
       </div>
       <p className="max-w-sm text-[var(--ink-dim)] leading-relaxed">{ui.landing.tagline}</p>

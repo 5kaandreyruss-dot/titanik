@@ -14,7 +14,7 @@ export default async function LeaderboardPage() {
 
   return (
     <div className="min-h-screen p-4 flex flex-col items-center gap-4">
-      <h1 className="text-xl font-semibold text-[var(--gold)]">{ui.leaderboard.title}</h1>
+      <h1 className="font-display text-xl font-semibold text-[var(--gold-bright)]">{ui.leaderboard.title}</h1>
       <LeaderboardView locale={locale} />
       <Link href="/menu" className="btn w-full max-w-md">{ui.leaderboard.backToMenu}</Link>
     </div>

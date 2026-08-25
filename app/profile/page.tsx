@@ -34,7 +34,7 @@ export default async function ProfilePage() {
   return (
     <div className="min-h-screen p-4 flex flex-col items-center gap-4">
       <Panel className="w-full max-w-md">
-        <h1 className="text-xl font-semibold text-[var(--gold)] mb-1">{user.nickname}</h1>
+        <h1 className="font-display text-xl font-semibold text-[var(--gold-bright)] mb-1">{user.nickname}</h1>
         <p className="text-sm text-[var(--ink-dim)] mb-4">
           {SubscriptionService.isPremium(user) ? ui.profile.premiumMember : ui.profile.freeAccount}
         </p>
