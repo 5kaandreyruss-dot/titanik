@@ -25,14 +25,15 @@ export default async function MenuPage() {
   const isPremium = SubscriptionService.isPremium(user);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 gap-6 relative">
-      <LocaleSwitcher locale={locale} className="absolute top-4 right-4" />
-      <div className="text-center">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 gap-6 relative overflow-hidden">
+      <div className="ambient-glow" />
+      <LocaleSwitcher locale={locale} className="absolute top-4 right-4 z-10" />
+      <div className="text-center relative z-10 anim-fade-in-up">
         <h1 className="font-display text-3xl font-bold tracking-widest text-[var(--gold-bright)]">{ui.landing.title}</h1>
         <p className="text-sm tracking-[0.3em] text-[var(--ink-dim)]">{ui.landing.subtitle}</p>
       </div>
 
-      <Panel className="w-full max-w-sm">
+      <Panel className="w-full max-w-sm relative z-10 anim-fade-in-up">
         <p className="text-sm text-[var(--ink-dim)] mb-4">
           {ui.menu.signedInAs} <span className="text-[var(--ink)] font-medium">{user.nickname}</span>
           {isPremium ? <span className="text-[var(--gold)]"> · {ui.menu.premiumBadge}</span> : null}

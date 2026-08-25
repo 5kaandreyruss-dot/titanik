@@ -7,7 +7,7 @@ import type { RunView } from "@/lib/engine/view";
 import type { PlayerAction } from "@/lib/engine/types";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { ShipMiniMap } from "@/components/game/ShipMiniMap";
+import { IsometricShipMap } from "@/components/game/IsometricShipMap";
 import { getUiDictionary } from "@/lib/i18n/ui";
 import type { Locale } from "@/lib/i18n/types";
 
@@ -18,11 +18,16 @@ interface ActionResponse {
   finished: boolean;
 }
 
+interface LogLine {
+  id: number;
+  text: string;
+}
+
 export function GameScreen({ runId, initialView, locale }: { runId: string; initialView: RunView; locale: Locale }) {
   const ui = getUiDictionary(locale);
   const router = useRouter();
   const [view, setView] = useState(initialView);
-  const [log, setLog] = useState<string[]>(initialView.log.map((l) => l.text));
+  const [log, setLog] = useState<LogLine[]>(() => initialView.log.map((l, i) => ({ id: i, text: l.text })));
   const [modal, setModal] = useState<"inventory" | "map" | "move" | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +40,11 @@ export function GameScreen({ runId, initialView, locale }: { runId: string; init
     try {
       const res = await api.post<ActionResponse>(`/api/game/runs/${runId}/action`, action);
       setView(res.view);
-      setLog((prev) => [...prev, ...res.effects.map((e) => e.text)].slice(-40));
+      setLog((prev) => {
+        const nextId = prev.length > 0 ? prev[prev.length - 1].id + 1 : 0;
+        const appended = res.effects.map((e, i) => ({ id: nextId + i, text: e.text }));
+        return [...prev, ...appended].slice(-40);
+      });
       if (res.newAchievements.length > 0) setNewAchievements(res.newAchievements);
       setModal(null);
     } catch (e) {
@@ -51,26 +60,30 @@ export function GameScreen({ runId, initialView, locale }: { runId: string; init
 
   return (
     <div className="h-dvh flex flex-col overflow-hidden">
+      {busy && <div className="loading-shimmer fixed top-0 left-0 right-0 h-0.5 z-50" />}
+
       <header className="panel mx-3 mt-3 px-4 py-2.5 flex items-center justify-between text-sm shrink-0">
         <div>
           <div className="text-[var(--gold-bright)] font-mono text-lg leading-none tracking-wide">{view.time}</div>
           <div className="text-[var(--ink-dim)] text-xs mt-0.5">{view.date}</div>
         </div>
-        <div className="text-right">
+        <div key={view.location?.id} className="text-right anim-fade-in-up">
           <div className="font-display font-semibold text-[var(--ink)]">{view.location?.name}</div>
           <div className="text-[var(--ink-dim)] text-xs mt-0.5">{view.location?.deck}</div>
         </div>
       </header>
 
-      <div className="mx-3 mt-2 panel scene-bg h-44 shrink-0 relative overflow-hidden">
-        <ShipMiniMap view={view} />
+      <div className="mx-3 mt-2 panel scene-bg h-48 shrink-0 relative overflow-hidden">
+        <IsometricShipMap view={view} />
         <div className="absolute bottom-2 left-3 right-3 text-xs text-[var(--ink-dim)]">
           <ShipStatus view={view} ui={ui} />
         </div>
       </div>
 
       <main className="flex-1 overflow-y-auto mx-3 mt-2 mb-2 panel p-4 space-y-3">
-        <p className="leading-relaxed text-[15px]">{view.location?.description}</p>
+        <p key={`desc-${view.location?.id}`} className="leading-relaxed text-[15px] anim-fade-in-up">
+          {view.location?.description}
+        </p>
 
         {view.npcsHere.length > 0 && (
           <div>
@@ -100,17 +113,20 @@ export function GameScreen({ runId, initialView, locale }: { runId: string; init
 
         {view.dialogue && (
           <DialoguePanel
+            key={`${view.dialogue.npcId}-${view.dialogue.text}`}
             dialogue={view.dialogue}
             onChoose={(choiceId) => send({ type: "DIALOGUE_CHOOSE", npcId: view.dialogue!.npcId, choiceId })}
             disabled={busy}
           />
         )}
 
-        {error && <p className="text-[var(--danger)] text-sm">{error}</p>}
+        {error && <p className="text-[var(--danger)] text-sm anim-fade-in-up">{error}</p>}
 
         <div className="border-t border-[var(--panel-border)] pt-3 text-sm text-[var(--ink-dim)] space-y-1.5">
-          {log.slice(-8).map((line, i) => (
-            <p key={i}>{line}</p>
+          {log.slice(-8).map((line) => (
+            <p key={line.id} className="anim-fade-in-up">
+              {line.text}
+            </p>
           ))}
         </div>
       </main>
@@ -182,25 +198,15 @@ export function GameScreen({ runId, initialView, locale }: { runId: string; init
 
       {modal === "map" && (
         <Modal title={ui.game.mapTitle} onClose={() => setModal(null)}>
-          <div className="flex flex-col gap-1">
-            {view.map.map((loc) => (
-              <div
-                key={loc.id}
-                className={`px-3 py-2 rounded-lg text-sm flex justify-between ${
-                  loc.isCurrent ? "bg-[var(--gold)] text-[#1a1408] font-semibold" : "bg-black/20"
-                }`}
-              >
-                <span>{loc.discovered ? loc.name : ui.game.unknownLocation}</span>
-                <span className="text-xs opacity-70">{loc.discovered ? loc.deck : ""}</span>
-              </div>
-            ))}
+          <div className="h-80">
+            <IsometricShipMap view={view} onMove={(id) => send({ type: "MOVE", targetLocationId: id })} />
           </div>
         </Modal>
       )}
 
       {newAchievements.length > 0 && (
         <div
-          className="fixed bottom-20 left-1/2 -translate-x-1/2 panel px-4 py-2 text-sm text-[var(--gold-bright)] cursor-pointer z-40"
+          className="fixed bottom-20 left-1/2 -translate-x-1/2 panel px-4 py-2 text-sm text-[var(--gold-bright)] cursor-pointer z-40 anim-pop-in"
           onClick={() => setNewAchievements([])}
         >
           {ui.game.achievementUnlocked}
@@ -232,7 +238,7 @@ function DialoguePanel({
   disabled: boolean;
 }) {
   return (
-    <div className="pixel-border p-3.5 bg-black/20">
+    <div className="pixel-border p-3.5 bg-black/20 anim-pop-in">
       <p className="text-[var(--gold-bright)] text-xs uppercase tracking-wide mb-1.5">{dialogue.npcName}</p>
       <p className="mb-3 italic leading-relaxed">{dialogue.text}</p>
       <div className="flex flex-col gap-2">
@@ -264,7 +270,7 @@ function EndingScreen({
         : "var(--neutral)";
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="panel max-w-md w-full p-6 text-center space-y-4">
+      <div className="panel max-w-md w-full p-6 text-center space-y-4 anim-pop-in">
         <h1 className="font-display text-2xl font-bold" style={{ color: categoryColor }}>
           {view.ending?.name}
         </h1>

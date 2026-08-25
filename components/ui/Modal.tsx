@@ -16,7 +16,7 @@ export function Modal({
       onClick={onClose}
     >
       <div
-        className="panel w-full sm:max-w-md max-h-[85vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl"
+        className="panel w-full sm:max-w-md max-h-[85vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl anim-pop-in"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-[var(--panel-border)] p-4 sticky top-0 bg-[var(--panel)] rounded-t-2xl">
