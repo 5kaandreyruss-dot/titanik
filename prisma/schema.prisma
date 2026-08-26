@@ -23,17 +23,15 @@ model User {
   role         Role     @default(USER)
   createdAt    DateTime @default(now())
 
-  // Subscription / Premium (spec #32, #69)
+  // Subscription / Premium
   isPremium    Boolean   @default(false)
   premiumUntil DateTime?
 
-  sessions            Session[]
-  gameRuns            GameRun[]
-  playerAchievements  PlayerAchievement[]
-  discoveries         Discovery[]
-  leaderboardEntries  LeaderboardEntry[]
-  subscriptionEvents  SubscriptionEvent[]
-  analyticsEvents     AnalyticsEvent[]
+  crystals Int @default(50)
+
+  sessions           Session[]
+  pets               Pet[]
+  subscriptionEvents SubscriptionEvent[]
 
   @@index([nickname])
 }
@@ -50,184 +48,82 @@ model Session {
 }
 
 model SubscriptionEvent {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   action    String // "activated" | "deactivated"
   source    String // "admin" | "system"
   until     DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([userId])
 }
 
 // ---------------------------------------------------------------------------
-// Game Runs
+// Pet
 // ---------------------------------------------------------------------------
 
-enum GameRunStatus {
-  ACTIVE
-  FINISHED
-  ABANDONED
+enum WorldTheme {
+  FANTASY
+  SPACE
+  CYBERPUNK
 }
 
-model GameRun {
-  id        String        @id @default(cuid())
-  userId    String
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status    GameRunStatus @default(ACTIVE)
-  seed      String
-  archetypeId String
+model Pet {
+  id     String     @id @default(cuid())
+  userId String     @unique
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name   String
+  world  WorldTheme
 
-  // Full serialized GameRunState (see ARCHITECTURE.md / GAME_DESIGN.md)
-  stateJson Json
+  // Stats, 0-100
+  trust        Int @default(50)
+  intelligence Int @default(10)
+  strength     Int @default(10)
+  energy       Int @default(80)
+  hunger       Int @default(70)
 
-  actionCount Int      @default(0)
-  endingId    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  finishedAt  DateTime?
+  // Personality trait vector, values 0-1, sums roughly to 1 across the set.
+  // e.g. { "curious": 0.6, "lazy": 0.2, "aggressive": 0.1, "gentle": 0.1 }
+  personality Json
 
-  discoveries        Discovery[]
-  leaderboardEntry   LeaderboardEntry?
-  playerAchievements PlayerAchievement[]
-  analyticsEvents    AnalyticsEvent[]
+  stage    Int      @default(0) // evolution stage index
+  bornAt   DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+  lastFedAt  DateTime?
+  neglected  Boolean  @default(false) // true once trust has bottomed out; can be rescued
 
-  @@index([userId, createdAt])
-  @@index([userId, status])
+  messages ChatMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
-// Server-side free-run daily counter (defense in depth alongside the
-// GameRun.createdAt count check — kept for fast lookups / potential future
-// non-run-based limits).
-model RunCounter {
-  id       String   @id @default(cuid())
-  userId   String
-  day      DateTime // truncated to UTC date
-  count    Int      @default(0)
+enum ChatRole {
+  USER
+  PET
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  petId     String
+  pet       Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  role      ChatRole
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([petId, createdAt])
+}
+
+// Server-side daily free-message counter (defense in depth for the AI chat
+// rate limit — free users get a small number of pet replies per day).
+model ChatCounter {
+  id     String   @id @default(cuid())
+  userId String
+  day    DateTime // truncated to UTC date
+  count  Int      @default(0)
 
   @@unique([userId, day])
-}
-
-// ---------------------------------------------------------------------------
-// Knowledge Archive (per-account meta knowledge, spec #19)
-// ---------------------------------------------------------------------------
-
-model Discovery {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  gameRunId   String?
-  gameRun     GameRun? @relation(fields: [gameRunId], references: [id], onDelete: SetNull)
-  knowledgeId String // matches a content-defined knowledge entry id
-  category    String // People | Locations | Events | Secrets | Technical | Endings
-  discoveredAt DateTime @default(now())
-
-  @@unique([userId, knowledgeId])
-  @@index([userId, category])
-}
-
-// ---------------------------------------------------------------------------
-// Achievements (spec #28)
-// ---------------------------------------------------------------------------
-
-model Achievement {
-  id          String @id // stable string id, matches lib/content/achievements
-  name        String
-  description String
-  secret      Boolean @default(false)
-
-  playerAchievements PlayerAchievement[]
-}
-
-model PlayerAchievement {
-  id            String      @id @default(cuid())
-  userId        String
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  achievementId String
-  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
-  gameRunId     String?
-  gameRun       GameRun?    @relation(fields: [gameRunId], references: [id], onDelete: SetNull)
-  unlockedAt    DateTime    @default(now())
-
-  @@unique([userId, achievementId])
-  @@index([userId])
-}
-
-// ---------------------------------------------------------------------------
-// Leaderboards (spec #29) — materialized per finished run for fast queries
-// ---------------------------------------------------------------------------
-
-model LeaderboardEntry {
-  id                 String   @id @default(cuid())
-  userId             String
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  gameRunId          String   @unique
-  gameRun            GameRun  @relation(fields: [gameRunId], references: [id], onDelete: Cascade)
-  nickname           String // denormalized for fast leaderboard reads
-  peopleRescued      Int      @default(0)
-  explorationPercent Int      @default(0)
-  secretsDiscovered  Int      @default(0)
-  survived           Boolean  @default(false)
-  heroicEnding       Boolean  @default(false)
-  durationMinutes    Int      @default(0) // real-world seconds elapsed during run, for speed board
-  achievementsCount  Int      @default(0)
-  createdAt          DateTime @default(now())
-
-  @@index([peopleRescued])
-  @@index([explorationPercent])
-  @@index([secretsDiscovered])
-  @@index([durationMinutes])
-  @@index([achievementsCount])
-}
-
-// ---------------------------------------------------------------------------
-// Content catalog mirrors (admin/reporting only — gameplay reads lib/content)
-// ---------------------------------------------------------------------------
-
-model NpcDefinitionRow {
-  id      String @id
-  name    String
-  version Int    @default(1)
-}
-
-model LocationDefinitionRow {
-  id      String @id
-  name    String
-  version Int    @default(1)
-}
-
-model ItemDefinitionRow {
-  id      String @id
-  name    String
-  version Int    @default(1)
-}
-
-model EventDefinitionRow {
-  id      String @id
-  name    String
-  version Int    @default(1)
-}
-
-model EndingDefinitionRow {
-  id      String @id
-  name    String
-  version Int    @default(1)
-}
-
-// ---------------------------------------------------------------------------
-// Analytics (spec #71 — architecture only, minimal)
-// ---------------------------------------------------------------------------
-
-model AnalyticsEvent {
-  id        String   @id @default(cuid())
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  gameRunId String?
-  gameRun   GameRun? @relation(fields: [gameRunId], references: [id], onDelete: SetNull)
-  type      String // "run_started" | "run_completed" | "ending_reached" | ...
-  payload   Json?
-  createdAt DateTime @default(now())
-
-  @@index([type, createdAt])
 }

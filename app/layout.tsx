@@ -19,8 +19,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Titanic: The Last Chance",
-  description: "An atmospheric, alternate-history survival game aboard the RMS Titanic.",
+  title: "AI Pet",
+  description: "Вырасти живого ИИ-питомца, который правда тебя помнит.",
 };
 
 export const viewport: Viewport = {

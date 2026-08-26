@@ -1,68 +1,48 @@
 # Deployment (free tier)
 
-Two free services are enough to run the game live: **Vercel** (hosting) and
-**Neon** (serverless Postgres). Vercel can provision a Neon database for you
-directly from its dashboard, so you don't need a separate Neon account.
+Two free services are enough to run the site live: **Vercel** (hosting) and
+**Neon** (serverless Postgres) — the same ones already connected from before,
+nothing to redo there. The only new thing this product needs is an
+**Anthropic API key** so the pet can actually talk.
 
 ## 1. Push the code to GitHub
 
-Already done if you're reading this from the repo — the app is ready to deploy
-as-is (`npm run build` runs `prisma migrate deploy` automatically before
-`next build`, so the production database schema is created/updated on every
-deploy).
+Already done if you're reading this from the repo — the app is ready to
+deploy as-is (`npm run build` runs `prisma migrate deploy` automatically
+before `next build`, so the production database schema is updated on every
+deploy — this deploy will drop the old game's tables and create the new
+Pet/ChatMessage ones).
 
-## 2. Create the database
+## 2. Environment variables
 
-1. Go to [vercel.com](https://vercel.com) and sign in with your GitHub account (free).
-2. In the Vercel dashboard: **Storage** → **Create Database** → choose **Neon**
-   (Postgres, free tier) → create it in any region.
-3. Keep this tab open; you'll copy a connection string from it in step 4.
+In the Vercel project's **Settings → Environment Variables**, you should
+already have:
 
-(Alternative: create a free database directly at [neon.tech](https://neon.tech)
-and skip the Vercel integration — either works, you just need a `postgresql://…`
-connection string.)
+- `DATABASE_URL` — the Neon connection string (already set from before).
 
-## 3. Import the project into Vercel
+Add one new variable:
 
-1. **Add New...** → **Project** → select the `titanik` GitHub repository.
-2. Framework preset should auto-detect as **Next.js** — leave build settings
-   as default (the repo's `package.json` already defines the right build command).
+- `ANTHROPIC_API_KEY` — get one at [console.anthropic.com](https://console.anthropic.com):
+  create an account, add a small prepaid balance (a few dollars is enough to
+  start — pet chat uses the cheap Haiku model), then create an API key under
+  **API Keys** and paste it in here.
 
-## 4. Set environment variables
+Without `ANTHROPIC_API_KEY` set, the app still runs and the pet still
+"talks" — just with a small set of canned fallback replies instead of a real
+AI conversation.
 
-In the project's **Settings → Environment Variables**, add:
+## 3. Redeploy
 
-- `DATABASE_URL` — the connection string from your Neon database (Vercel fills
-  this in automatically if you created the DB via its Storage tab in step 2).
-
-That's the only required variable. Click **Deploy**.
-
-## 5. First deploy
-
-Vercel will install dependencies, run `prisma migrate deploy` (creates all
-tables), then build and deploy the app. You'll get a live URL like
-`https://titanik-yourname.vercel.app`.
-
-## 6. Seed initial data (achievements catalog + admin account)
-
-Run this once, from your local machine, pointed at the production database:
-
-```bash
-DATABASE_URL="<paste the same production connection string>" npm run db:seed
-```
-
-This creates the achievement catalog rows and an admin account (nickname
-`admin`, password `changeme123` unless you override `SEED_ADMIN_NICKNAME` /
-`SEED_ADMIN_PASSWORD` env vars when running the seed). **Log in and change
-that password immediately** — or better, set custom `SEED_ADMIN_NICKNAME`
-and `SEED_ADMIN_PASSWORD` env vars before running the seed the first time.
+Since the repo is already connected, pushing to the connected branch (or
+just re-running the last deploy after adding the env var) triggers a new
+build automatically. You'll get the same live URL as before.
 
 ## Notes on the free tier
 
 - Neon's free tier suspends the database after a period of inactivity and
   wakes it on the next request (a short cold-start delay) — fine for a demo
-  or low-traffic game.
-- Vercel's Hobby (free) plan is sufficient for this app's traffic; serverless
-  function cold starts add a small delay to the first request after idle.
-- Every subsequent `git push` to the connected branch auto-deploys and
-  re-runs migrations — no manual redeploy steps needed after the first setup.
+  or low-traffic app.
+- Vercel's Hobby (free) plan is sufficient for this app's traffic.
+- The Anthropic API is pay-per-use, not free — but pet chat uses the cheap
+  Haiku model and the app enforces a daily per-user message quota
+  server-side, so cost stays bounded and predictable even with real users.

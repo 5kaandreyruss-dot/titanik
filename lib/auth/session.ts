@@ -4,7 +4,7 @@ import { randomBytes, createHash } from "crypto";
 import { prisma } from "@/lib/db/prisma";
 import type { User } from "@prisma/client";
 
-const SESSION_COOKIE = "titanik_session";
+const SESSION_COOKIE = "aipet_session";
 const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 function hashToken(token: string): string {
