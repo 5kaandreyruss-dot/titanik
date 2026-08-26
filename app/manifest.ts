@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Titanic: The Last Chance",
-    short_name: "Titanic",
-    description: "An atmospheric, alternate-history survival game aboard the RMS Titanic.",
+    name: "AI Pet",
+    short_name: "AI Pet",
+    description: "Вырасти живого ИИ-питомца, который правда тебя помнит.",
     start_url: "/",
     display: "standalone",
     background_color: "#060d16",
