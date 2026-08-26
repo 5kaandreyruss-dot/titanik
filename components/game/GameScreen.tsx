@@ -100,7 +100,7 @@ export function GameScreen({
     <div className="h-dvh flex flex-col overflow-hidden bg-[var(--bg-deep)]">
       {busy && <div className="loading-shimmer fixed top-0 left-0 right-0 h-0.5 z-50" />}
 
-      <div className="relative shrink-0" style={{ height: "36vh", minHeight: 200, maxHeight: 320 }}>
+      <div className="relative shrink-0" style={{ height: "30vh", minHeight: 190, maxHeight: 260 }}>
         <div key={view.location?.sceneBackground} className="absolute inset-0 anim-fade-in-up">
           <SceneArt sceneKey={view.location?.sceneBackground ?? ""} />
         </div>
@@ -129,50 +129,52 @@ export function GameScreen({
         </div>
       </div>
 
-      <main className="flex-1 overflow-y-auto mx-3 mt-2 mb-2 panel p-4 space-y-3">
-        {view.dialogue ? (
-          <DialoguePanel
-            key={`${view.dialogue.npcId}-${view.dialogue.text}`}
-            dialogue={view.dialogue}
-            onChoose={(choiceId) => send({ type: "DIALOGUE_CHOOSE", npcId: view.dialogue!.npcId, choiceId })}
-            disabled={busy}
-          />
-        ) : (
-          <>
-            <p key={`desc-${view.location?.id}`} className="leading-relaxed text-[15px] anim-fade-in-up">
-              {view.location?.description}
-            </p>
+      <main className="flex-1 overflow-y-auto mx-3 mt-2 mb-2">
+        <div className="panel p-4 space-y-3">
+          {view.dialogue ? (
+            <DialoguePanel
+              key={`${view.dialogue.npcId}-${view.dialogue.text}`}
+              dialogue={view.dialogue}
+              onChoose={(choiceId) => send({ type: "DIALOGUE_CHOOSE", npcId: view.dialogue!.npcId, choiceId })}
+              disabled={busy}
+            />
+          ) : (
+            <>
+              <p key={`desc-${view.location?.id}`} className="leading-relaxed text-[15px] anim-fade-in-up">
+                {view.location?.description}
+              </p>
 
-            {view.npcsHere.length > 0 && (
-              <div>
-                <p className="text-xs uppercase tracking-wide text-[var(--ink-dim)] mb-1.5">{ui.game.peopleHere}</p>
-                <div className="flex flex-wrap gap-2">
-                  {view.npcsHere.map((npc) => (
-                    <Button key={npc.id} onClick={() => send({ type: "TALK_START", npcId: npc.id })} disabled={busy}>
-                      <NpcPortrait npcId={npc.id} size={22} />
-                      {ui.game.talkTo(npc.name)}
-                    </Button>
-                  ))}
+              {view.npcsHere.length > 0 && (
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-[var(--ink-dim)] mb-1.5">{ui.game.peopleHere}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {view.npcsHere.map((npc) => (
+                      <Button key={npc.id} onClick={() => send({ type: "TALK_START", npcId: npc.id })} disabled={busy}>
+                        <NpcPortrait npcId={npc.id} size={24} />
+                        {ui.game.talkTo(npc.name)}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {view.itemsHere.length > 0 && (
-              <div>
-                <p className="text-xs uppercase tracking-wide text-[var(--ink-dim)] mb-1.5">{ui.game.nearby}</p>
-                <div className="flex flex-wrap gap-2">
-                  {view.itemsHere.map((item) => (
-                    <Button key={item.id} onClick={() => send({ type: "TAKE_ITEM", itemId: item.id })} disabled={busy}>
-                      {ui.game.take(item.name)}
-                    </Button>
-                  ))}
+              {view.itemsHere.length > 0 && (
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-[var(--ink-dim)] mb-1.5">{ui.game.nearby}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {view.itemsHere.map((item) => (
+                      <Button key={item.id} onClick={() => send({ type: "TAKE_ITEM", itemId: item.id })} disabled={busy}>
+                        {ui.game.take(item.name)}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </>
-        )}
+              )}
+            </>
+          )}
 
-        {error && <p className="text-[var(--danger)] text-sm anim-fade-in-up">{error}</p>}
+          {error && <p className="text-[var(--danger)] text-sm anim-fade-in-up">{error}</p>}
+        </div>
       </main>
 
       <nav className="grid grid-cols-4 gap-1.5 mx-3 mb-3 shrink-0">
